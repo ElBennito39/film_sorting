@@ -58,9 +58,4 @@ def bulk_create_aliases(list):
 
 bulk_create_aliases(list)
 
-
-
-
-# 
-
-# 
+# get python manager for mac_alias to work
