@@ -4,8 +4,11 @@
 ## Organize by Play Type Attribute
 
 To categorize your video files, they must be named using the format:
+gg is game #
+cc is video clip #
+
 ```
-date_tag_tag_tag.mp4
+gg_cc_tag_tag_tag.mp4
 ```
 Tags must be separated by underscores. See `play_definition` in `constants.py` for the dictionary of acceptable tags.
 
