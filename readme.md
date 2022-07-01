@@ -1,6 +1,6 @@
 # Game Footage Organizer Tool
-#### Store Game Film in one 'library'
-#### Create Symlink of each clip in ALL of the cooresponding play attribute folder
+- Store Game Film in one 'library'
+- Create Symlink of each clip in ALL of the cooresponding play attribute folder
 ## Organize by Play Type Attribute
 
 To categorize your video files, they must be named using the format:
