@@ -1,36 +1,76 @@
+# Game Footage Organizer by Play Type Attribute
+#
+# Store Game Film in one 'library'
+# Create Symlink of each clip in ALL of the cooresponding play attribute folder
+# 
+# 
+# functions needed
+# 
+# create alias of clip in destination:
+# 
+# iterate a search file names for play attribute
+#  
+# 
+# 
+# finding files with one play attribute tag
+
 import os
 import constants
 
-# return a list of full file names with given play_tag
-def find_tags(play_tag):
-    tag_results = []
-    for path, currentDirectory, files in os.walk(constants.VID_PATH):
-       for file in files:
-        if play_tag in file:
-             tag_results.append(file)
-    return tag_results
-    print (tag_results)
-
-# list of all found tags as defined by tag_results
-list = find_tags ("DZC")
-
-# take in tag results, create alias to each path in that tags directory
-def create_symlink(file_name):
-
-    file_name = file_name.replace('.mp4','')
-    
-    tag_list = file_name.split('_')
+#delete legacy symlinks
+def del_legacy_syms():
+    for path, currentDirectory, files_in_directory in os.walk(constants.DEST_PATH):
+        for filename in files_in_directory:
+            os.remove(path+"/"+filename)
         
-    for tag in tag_list:
-        if tag in constants.play_definition:
-            print (tag)
-            os.symlink("{}/Video Library/06-24-2022_Game#2_TidalWave".format(constants.VID_PATH)+"/"+file_name+".mp4","/Users/Sidekick/Desktop/{}".format(file_name)+".mp4")
+del_legacy_syms()
 
+# # takes in a string and returns a list of tuples with full file path and file name for each file in directory
+#Map Files to list or tuples
+def find_tags():
+    tag_results = []
+    for path, currentDirectory, files_in_directory in os.walk(constants.VID_PATH):
+        print ("path")
+        print (path)
+        print ("filenames in directory")
+        print (files_in_directory)
+        for filename in files_in_directory:
+            tag_results.append([path,filename])
+    return tag_results
+
+
+tag_tuples= find_tags()
+print ("tag_tuples")
+print (tag_tuples)
+
+#unpack tuple list into list of file names and list of file paths
+# path_list, file_list = zip(*tag_tuples)
+
+
+# take in file_list, for each file in that list create symlink to each path in that tags directory
+
+def create_symlink(list):
+
+    for tuple in list: 
+
+        file_full_name = tuple[1]
+        file_name = file_full_name.replace('.mp4','')
+        
+        tag_list = file_name.split('_')
             
-# create aliases from list of files
-def bulk_create_aliases(list):
-    for file in list:
-        create_aliases(file)
+        for tag in tag_list:
+            if tag in constants.play_definition:
+                print ("tag")
+                print (tag)
+                print ("file_full_name")
+                print (file_full_name)
+                print ("play_definition[tag]")
+                print (constants.play_definition[tag])
+            
 
-bulk_create_aliases(list)
+                os.symlink(tuple[0]+"/"+file_full_name,f"{constants.play_definition[tag]}{file_full_name}")
+
+
+
+create_symlink(tag_tuples)            
 
