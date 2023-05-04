@@ -1,6 +1,6 @@
 #path placeholder for video link destinations
-DEST_PATH = "/Users/Sidekick/Desktop/PHC 15U/Post Scout"
-VID_PATH= "/Users/Sidekick/Desktop/PHC 15U/Video Library"
+DEST_PATH = "/home/brien/my_files/test_film/post_scout"
+VID_PATH = "/home/brien/my_files/test_film/PHC15U_vs_Titans-01-2023"
 
 # build dictionary of play types and symlink destination folders
 play_definition = {
@@ -12,7 +12,7 @@ play_definition = {
     "NZF":"{}/NZForecheck/".format(DEST_PATH),
     "NZO":"{}/NZOffense/".format(DEST_PATH),
     "OZF":"{}/OZForecheck/".format(DEST_PATH),
-    "OZO":"{}/NOZOffense/".format(DEST_PATH),
+    "OZO":"{}/OZOffense/".format(DEST_PATH),
     "PK":"{}/PK/".format(DEST_PATH),
     "PP":"{}/PP/".format(DEST_PATH),
     "RushD":"{}/RushDefense/".format(DEST_PATH),
