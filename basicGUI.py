@@ -11,11 +11,22 @@ def open_video():
         file_name = os.path.basename(file_path)
         root.title(f"{file_path} - {file_name}")
 
-def toggle_tag(tag_button):
-    if tag_button.config('relief')[-1] == 'sunken':
-        tag_button.config(relief="raised", bg='SystemButtonFace')
+def toggle_tag(button):
+    if button.config("relief")[-1] == "raised":
+        button.config(relief="sunken", background="NavyBlue", foreground="white")
     else:
-        tag_button.config(relief="sunken", bg='green')
+        button.config(relief="raised", background=default_button_color, foreground="black")
+
+
+
+
+
+
+# def toggle_tag(tag_button):
+#     if tag_button.config('relief')[-1] == 'sunken':
+#         tag_button.config(relief="raised", bg='SystemButtonFace')
+#     else:
+#         tag_button.config(relief="sunken", bg='green')
 
 root = tk.Tk()
 root.title("Video Tagger")
@@ -57,6 +68,9 @@ next_button.grid(row=0, column=4, padx=5)
 # Tagging mechanism
 tagging_frame = tk.Frame(root)
 tagging_frame.pack(pady=10, fill=tk.X)
+# create a dummy button to get the background color to use in toggle_tag() so it can reset the background color on click
+dummy_button = tk.Button(root)
+default_button_color = dummy_button.cget("background")
 
 # Configure columns to expand proportionally
 tagging_frame.columnconfigure(0, weight=1)
