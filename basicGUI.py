@@ -1,13 +1,15 @@
 import tkinter as tk
 from tkinter import filedialog
 from tkVideoPlayer import TkinterVideo
-import functools
+import functools, os
 
 def open_video():
     file_path = filedialog.askopenfilename()
     if file_path:
         video_player.load(file_path)
         video_player.play()
+        file_name = os.path.basename(file_path)
+        root.title(f"{file_path} - {file_name}")
 
 def toggle_tag(tag_button):
     if tag_button.config('relief')[-1] == 'sunken':
@@ -79,14 +81,14 @@ for i, tag in enumerate(tag_buttons_goals_penalties):
 section1_5 = tk.Frame(tagging_frame)
 section1_5.grid(row=0, column=1)
 
-text_display = tk.Label(section1_5, text="Example Text", bg="white", relief="sunken", width=20)
+text_display = tk.Label(section1_5, text="True Man Power", bg="white", relief="sunken", width=20)
 text_display.pack(padx=5, pady=5)
 
 # Section 1: Text entry and Add/Remove buttons
 section1 = tk.Frame(tagging_frame)
 section1.grid(row=0, column=2, columnspan=1)
 
-tag_entry = tk.Entry(section1, width=10)
+tag_entry = tk.Entry(section1, width=20)
 tag_entry.pack(side=tk.LEFT, padx=5)
 
 add_tag_button = tk.Button(section1, text="Add Tag", width=10)
@@ -99,7 +101,7 @@ remove_tag_button.pack(side=tk.LEFT, padx=5)
 section2 = tk.Frame(tagging_frame)
 section2.grid(row=1, column=0)
 
-tag_buttons_7_12 = ["Tag7", "Tag8", "Tag9", "Tag10", "Tag11", "Tag12"]
+tag_buttons_7_12 = ["5 v 4", "4 v 5", "5 v 3", "3 v 5", "4 v 3", "3 v 4"]
 for i, tag in enumerate(tag_buttons_7_12):
     tag_button = tk.Button(section2, text=tag, width=10, relief="raised")
     tag_button.config(command=functools.partial(toggle_tag, tag_button))
@@ -117,15 +119,18 @@ for i, tag in enumerate(tag_buttons_empty_net):
 
 
 
-# Section 4: Numpad-like grid with an extra button for 0
+# Section 4: Custom grid layout for Play-type
 section4 = tk.Frame(tagging_frame)
 section4.grid(row=1, column=2)
 
-numpad_tags = ["Tag1", "Tag2", "Tag3", "Tag4", "Tag5", "Tag6", "Tag7", "Tag8"]
-for i, tag in enumerate(numpad_tags):
+numpad_tags = ["DZCoverage", "BreakOut", "Backchecking", "Regrouping", "NZForehecking", "NZAttack", "OZForecheck", "OZAttack"]
+grid_positions = [(0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (1, 3), (2, 1), (2, 2)]
+
+for tag, position in zip(numpad_tags, grid_positions):
     tag_button = tk.Button(section4, text=tag, width=10, relief="raised")
     tag_button.config(command=functools.partial(toggle_tag, tag_button))
-    tag_button.grid(row=i % 3, column=i // 3, padx=5, pady=5)
+    tag_button.grid(row=position[0], column=position[1], padx=5, pady=5)
+
 
 
 # Menu
