@@ -17,16 +17,11 @@ def toggle_tag(button):
     else:
         button.config(relief="raised", background=default_button_color, foreground="black")
 
+def on_key_press(event, tag_button):
+    toggle_tag(tag_button)
 
 
-
-
-
-# def toggle_tag(tag_button):
-#     if tag_button.config('relief')[-1] == 'sunken':
-#         tag_button.config(relief="raised", bg='SystemButtonFace')
-#     else:
-#         tag_button.config(relief="sunken", bg='green')
+# Create the TKinter GUI
 
 root = tk.Tk()
 root.title("Video Tagger")
@@ -98,18 +93,18 @@ section1_5.grid(row=0, column=1)
 text_display = tk.Label(section1_5, text="True Man Power", bg="white", relief="sunken", width=20)
 text_display.pack(padx=5, pady=5)
 
-# Section 1: Text entry and Add/Remove buttons
-section1 = tk.Frame(tagging_frame)
-section1.grid(row=0, column=2, columnspan=1)
+# # Section 1: Text entry and Add/Remove buttons
+# section1 = tk.Frame(tagging_frame)
+# section1.grid(row=0, column=2, columnspan=1)
 
-tag_entry = tk.Entry(section1, width=20)
-tag_entry.pack(side=tk.LEFT, padx=5)
+# tag_entry = tk.Entry(section1, width=20)
+# tag_entry.pack(side=tk.LEFT, padx=5)
 
-add_tag_button = tk.Button(section1, text="Add Tag", width=10)
-add_tag_button.pack(side=tk.LEFT, padx=5)
+# add_tag_button = tk.Button(section1, text="Add Tag", width=10)
+# add_tag_button.pack(side=tk.LEFT, padx=5)
 
-remove_tag_button = tk.Button(section1, text="Remove Tag", width=10)
-remove_tag_button.pack(side=tk.LEFT, padx=5)
+# remove_tag_button = tk.Button(section1, text="Remove Tag", width=10)
+# remove_tag_button.pack(side=tk.LEFT, padx=5)
 
 # Section 2: Tag buttons 7-12 in a 2x3 grid
 section2 = tk.Frame(tagging_frame)
@@ -135,15 +130,23 @@ for i, tag in enumerate(tag_buttons_empty_net):
 
 # Section 4: Custom grid layout for Play-type
 section4 = tk.Frame(tagging_frame)
-section4.grid(row=1, column=2)
+section4.grid(row=0, column=2, rowspan=2)
 
-numpad_tags = ["DZCoverage", "BreakOut", "Backchecking", "Regrouping", "NZForehecking", "NZAttack", "OZForecheck", "OZAttack"]
-grid_positions = [(0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (1, 3), (2, 1), (2, 2)]
+numpad_tags = ["DZCoverage", "Backchecking", "NZForehecking", "OZForecheck", "BreakOut", "Regrouping", "NZAttack",  "OZAttack"]
+grid_positions = [(0, 0), (0, 1), (0, 2), (0, 3), (1, 0), (1, 1), (1, 2), (1, 3)]
+hotkeys = ["1", "2", "3", "4", "5", "6", "7", "8"]
 
-for tag, position in zip(numpad_tags, grid_positions):
+for tag, position, hotkey in zip(numpad_tags, grid_positions, hotkeys):
     tag_button = tk.Button(section4, text=tag, width=10, relief="raised")
     tag_button.config(command=functools.partial(toggle_tag, tag_button))
     tag_button.grid(row=position[0], column=position[1], padx=5, pady=5)
+    root.bind(hotkey, functools.partial(on_key_press, tag_button=tag_button))
+
+
+# for tag, position in zip(numpad_tags, grid_positions):
+#     tag_button = tk.Button(section4, text=tag, width=10, relief="raised")
+#     tag_button.config(command=functools.partial(toggle_tag, tag_button))
+#     tag_button.grid(row=position[0], column=position[1], padx=5, pady=5)
 
 
 
