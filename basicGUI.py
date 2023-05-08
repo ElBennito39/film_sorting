@@ -54,7 +54,12 @@ next_button.grid(row=0, column=4, padx=5)
 
 # Tagging mechanism
 tagging_frame = tk.Frame(root)
-tagging_frame.pack(pady=10)
+tagging_frame.pack(pady=10, fill=tk.X)
+
+# Configure columns to expand proportionally
+tagging_frame.columnconfigure(0, weight=1)
+tagging_frame.columnconfigure(1, weight=1)
+tagging_frame.columnconfigure(2, weight=1)
 
 # Section 0: Goal fore/against and penalty taken/drawn
 section0 = tk.Frame(tagging_frame)
@@ -62,9 +67,20 @@ section0.grid(row=0, column=0)
 
 tag_buttons_goals_penalties = ["Goal For", "Goal Against", "Penalty Drawn", "Penalty Taken"]
 for i, tag in enumerate(tag_buttons_goals_penalties):
-    tag_button = tk.Button(section0, text=tag, width=10, relief="raised")
+    tag_button = tk.Button(section0, text=tag, width=15, relief="raised")
     tag_button.config(command=functools.partial(toggle_tag, tag_button))
     tag_button.grid(row=i % 2, column=i // 2, padx=5, pady=5)
+
+# # Section 3: Space out attribute from play-type taggings by creating a Label to span column 1 to a set width
+# section3 = tk.Label(tagging_frame, width=30)
+# section3.grid(row=0, column=1)
+
+# Section 1.5: Text display
+section1_5 = tk.Frame(tagging_frame)
+section1_5.grid(row=0, column=1)
+
+text_display = tk.Label(section1_5, text="Example Text", bg="white", relief="sunken", width=20)
+text_display.pack(padx=5, pady=5)
 
 # Section 1: Text entry and Add/Remove buttons
 section1 = tk.Frame(tagging_frame)
@@ -89,9 +105,17 @@ for i, tag in enumerate(tag_buttons_7_12):
     tag_button.config(command=functools.partial(toggle_tag, tag_button))
     tag_button.grid(row=i % 2, column=i // 2, padx=5, pady=5)
 
-# Section 3: Space out attribute from play-type taggings
-section3 = tk.Frame(tagging_frame)
-section3.grid(row=1, column=1)
+# Section 5: Tag buttons Extra Attacker and Net Empty
+section5 = tk.Frame(tagging_frame)
+section5.grid(row=1, column=1)
+
+tag_buttons_empty_net = ["Extra Attacker", "Opp. Net Empty"]
+for i, tag in enumerate(tag_buttons_empty_net):
+    tag_button = tk.Button(section5, text=tag, width=15, relief="raised")
+    tag_button.config(command=functools.partial(toggle_tag, tag_button))
+    tag_button.grid(row=i % 2, column=i // 2, padx=5, pady=5)
+
+
 
 # Section 4: Numpad-like grid with an extra button for 0
 section4 = tk.Frame(tagging_frame)
