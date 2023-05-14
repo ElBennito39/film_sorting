@@ -134,19 +134,31 @@ section4.grid(row=0, column=2, rowspan=2)
 
 numpad_tags = ["DZCoverage", "Backchecking", "NZForehecking", "OZForecheck", "BreakOut", "Regrouping", "NZAttack",  "OZAttack"]
 grid_positions = [(0, 0), (0, 1), (0, 2), (0, 3), (1, 0), (1, 1), (1, 2), (1, 3)]
-hotkeys = ["1", "2", "3", "4", "5", "6", "7", "8"]
+# hotkeys = ["1", "2", "3", "4", "5", "6", "7", "8"]
+# number_hotkeys = ["1", "2", "3", "4", "5", "6", "7", "8"]
+# numpad_hotkeys = ["KP_1", "KP_2", "KP_3", "KP_4", "KP_5", "KP_6", "KP_7", "KP_8"]
 
-for tag, position, hotkey in zip(numpad_tags, grid_positions, hotkeys):
+# for tag, position, number_hotkey, numpad_hotkey in zip(numpad_tags, grid_positions, number_hotkeys, numpad_hotkeys):
+for tag, position in zip(numpad_tags, grid_positions):
     tag_button = tk.Button(section4, text=tag, width=10, relief="raised")
     tag_button.config(command=functools.partial(toggle_tag, tag_button))
     tag_button.grid(row=position[0], column=position[1], padx=5, pady=5)
-    root.bind(hotkey, functools.partial(on_key_press, tag_button=tag_button))
-
-
-# for tag, position in zip(numpad_tags, grid_positions):
+    # root.bind('<' + number_hotkey + '>', functools.partial(on_key_press, tag_button=tag_button))
+    # root.bind('<' + numpad_hotkey + '>', functools.partial(on_key_press, tag_button=tag_button))
+def bind_hotkeys():
+    for i in range(8):
+        number_hotkey = str(i+1)
+        numpad_hotkey = 'KP_' + str(i+1)
+        button = section4.grid_slaves(row=i//4, column=i%4)[0]
+        root.bind(number_hotkey, functools.partial(on_key_press, tag_button=button))
+        root.bind('<' + numpad_hotkey + '>', functools.partial(on_key_press, tag_button=button)) # key symbols for the numpad keys should be wrapped with < and > 
+bind_hotkeys()
+# for tag, position, hotkey in zip(numpad_tags, grid_positions, hotkeys):
 #     tag_button = tk.Button(section4, text=tag, width=10, relief="raised")
 #     tag_button.config(command=functools.partial(toggle_tag, tag_button))
 #     tag_button.grid(row=position[0], column=position[1], padx=5, pady=5)
+#     root.bind(hotkey, functools.partial(on_key_press, tag_button=tag_button))
+
 
 
 
