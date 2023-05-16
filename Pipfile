@@ -7,6 +7,7 @@ name = "pypi"
 opencv-python = "*"
 pillow = "*"
 tkvideoplayer = "*"
+pyside2 = "*"
 
 [dev-packages]
 
