@@ -1,7 +1,4 @@
 #Importing
-# from PySide2.QtWidgets import QApplication, QMainWindow, QVBoxLayout,QHBoxLayout, QMenuBar, QSizePolicy
-# from PySide2.QtWidgets import QPushButton, QWidget, QFileDialog, QAction, QListWidget
-# from PySide2.QtWidgets import QSlider, QAbstractSlider, QSplitter, QShortcut, W
 from PySide2.QtWidgets import *
 from PySide2.QtMultimedia import QMediaPlayer, QMediaContent
 from PySide2.QtMultimediaWidgets import QVideoWidget
