@@ -21,19 +21,23 @@ class VideoWindow(QMainWindow):
         self.video_widget = QVideoWidget()
 
         # Add buttons
-        self.play_button = QPushButton("Play")
-        self.pause_button = QPushButton("Pause")
+        self.play_pause_button = QPushButton("Play")
+        # self.play_button = QPushButton("Play")
+        # self.pause_button = QPushButton("Pause")
         self.stop_button = QPushButton("Stop")
 
         # Connect the buttons to the respective methods
-        self.play_button.clicked.connect(self.media_player.play)
-        self.pause_button.clicked.connect(self.media_player.pause)
+        # self.play_button.clicked.connect(self.media_player.play)
+        # self.play_button.clicked.connect(self.play_pause_button)
+        # self.pause_button.clicked.connect(self.media_player.pause)
+        # self.pause_button.clicked.connect(self.play_pause_button)
+        self.play_pause_button.clicked.connect(self.toggle_play_pause)
         self.stop_button.clicked.connect(self.media_player.stop)
 
         # Add speed slider selection
         self.speed_slider = QSlider(Qt.Horizontal)
         self.speed_slider.setMinimum(2)
-        self.speed_slider.setMaximum(30)
+        self.speed_slider.setMaximum(20)
         self.speed_slider.setValue(10)
         self.speed_slider.setTickInterval(1)
         self.speed_slider.setTickPosition(QSlider.TicksAbove)
@@ -55,8 +59,8 @@ class VideoWindow(QMainWindow):
         # Create a layout and add the playback widgets
         layout_box = QVBoxLayout()
         # layout.addWidget(self.video_widget) #lets move it out of layout
-        layout_box.addWidget(self.play_button)
-        layout_box.addWidget(self.pause_button)
+        layout_box.addWidget(self.play_pause_button)
+        # layout_box.addWidget(self.pause_button)
         layout_box.addWidget(self.stop_button)
         # layout.addWidget(self.playlist)
         layout_box.addWidget(self.speed_slider)
@@ -85,6 +89,9 @@ class VideoWindow(QMainWindow):
         # Connect the media player's state changed signal to handle resizing the window
         self.media_player.stateChanged.connect(self.resize_to_video)
 
+        # Connect the media player's state signal to reset video position at end of media.
+        self.media_player.mediaStatusChanged.connect(self.check_media_status)
+
         # Connect the playlist's signal to change the video
         self.playlist.itemClicked.connect(self.change_video) #clicking the file
         self.playlist.itemActivated.connect(self.change_video) #activating the file with 'enter'
@@ -104,10 +111,11 @@ class VideoWindow(QMainWindow):
         file_menu.addAction(open_action)
 
         # Add keyboard shortcuts
-        QShortcut(QKeySequence(" "), self, self.play_pause)
-        QShortcut(QKeySequence("S"), self, self.media_player.stop)
-        QShortcut(QKeySequence(Qt.Key_Left), self, self.decrease_speed)
-        QShortcut(QKeySequence(Qt.Key_Right), self, self.increase_speed)
+        QShortcut(QKeySequence(Qt.Key_Space), self, self.toggle_play_pause) #play-pause spacebar toggle
+        QShortcut(QKeySequence(Qt.Key_S), self, self.media_player.stop) #stop video with 'S'
+        QShortcut(QKeySequence(Qt.Key_Left), self, self.decrease_speed) #decrease speed with 'left'
+        QShortcut(QKeySequence(Qt.Key_Right), self, self.increase_speed) #increase speed with 'right'
+
 
 
     ##FUNCTIONS BELOW
@@ -136,6 +144,11 @@ class VideoWindow(QMainWindow):
             absolute_path = os.path.join(self.current_dir, file_name)
             self.media_player.setMedia(QMediaContent(QUrl.fromLocalFile(absolute_path)))
 
+    # function to reset the video playback position to '0' once the media finishes playing
+    def check_media_status(self, status):
+        if status==QMediaPlayer.EndOfMedia:
+            self.mediaPlayer.setPosition(0)
+
     # resizes the video to the resolution of the file defined by its meta data
     def resize_to_video(self):
         if self.media_player.isVideoAvailable():
@@ -148,20 +161,21 @@ class VideoWindow(QMainWindow):
         self.speed_label.setText("{:.1f}x".format(value / 10))
 
     # decreases the speed to slide value
-    def decrease_speed(self, value):
+    def decrease_speed(self):
         self.speed_slider.setValue(self.speed_slider.value() -1)
 
     # increases the speed to slider value
-    def increase_speed(self, value):
+    def increase_speed(self):
         self.speed_slider.setValue(self.speed_slider.value() +1)
     
     # plays and pauses video based on the current state
-    def play_pause(self):
+    def toggle_play_pause(self):
         if self.media_player.state() == QMediaPlayer.PlayingState:
             self.media_player.pause()
+            self.play_pause_button.setText("Play")
         else:
             self.media_player.play()
-    
+            self.play_pause_button.setText("Pause")
 
 
 
