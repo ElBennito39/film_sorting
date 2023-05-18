@@ -1,5 +1,5 @@
 
-# iterate a search file names for play attribute
-#  
-# 
-# finding files with one play attribute tag
+# finish PySide2 gui
+### fix video flashing on play-pause
+### create all play tag selectors
+### create hotkeys
