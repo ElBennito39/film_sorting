@@ -16,15 +16,26 @@ class VideoWindow(QMainWindow):
         # Store the current directory
         self.current_dir = None
 
+        # Set initial size of the window to 60% of the screen size
+        screen_geometry = QDesktopWidget().screenGeometry()
+        self.resize(screen_geometry.width() * 0.6, screen_geometry.height() * 0.6)
+
         # Set up the media player and video widget
         self.media_player = QMediaPlayer()
         self.video_widget = QVideoWidget()
 
+        # set the size policy
+        self.video_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+
         # Add buttons
         self.play_pause_button = QPushButton("Play")
-        # self.play_button = QPushButton("Play")
-        # self.pause_button = QPushButton("Pause")
         self.stop_button = QPushButton("Stop")
+        
+        # set the size policy
+        self.play_pause_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.stop_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+
 
         # Connect the buttons to the respective methods
         # self.play_button.clicked.connect(self.media_player.play)
@@ -68,11 +79,11 @@ class VideoWindow(QMainWindow):
 
 
         # Create a splitter for the playlist and the playback buttons
-        splitter = QSplitter()
-        splitter.addWidget(self.playlist)
-        playback_widget = QWidget()
-        playback_widget.setLayout(layout_box)
-        splitter.addWidget(playback_widget)
+        splitter = QSplitter() 
+        splitter.addWidget(self.playlist) #add playlist to the split display box
+        playback_widget = QWidget() #create a widget for to hold the playback buttons
+        playback_widget.setLayout(layout_box) #give the button layout to the playback widget
+        splitter.addWidget(playback_widget) #add playback to the split display box
         splitter.setSizes([self.width() / 4, 3 * self.width() / 4])
 
         # create a main layout for the central widget
@@ -113,8 +124,8 @@ class VideoWindow(QMainWindow):
         # Add keyboard shortcuts
         QShortcut(QKeySequence(Qt.Key_Space), self, self.toggle_play_pause) #play-pause spacebar toggle
         QShortcut(QKeySequence(Qt.Key_S), self, self.media_player.stop) #stop video with 'S'
-        QShortcut(QKeySequence(Qt.Key_Left), self, self.decrease_speed) #decrease speed with 'left'
-        QShortcut(QKeySequence(Qt.Key_Right), self, self.increase_speed) #increase speed with 'right'
+        QShortcut(QKeySequence(Qt.Key_Down), self, self.decrease_speed) #decrease speed with 'left'
+        QShortcut(QKeySequence(Qt.Key_Up), self, self.increase_speed) #increase speed with 'right'
 
 
 
@@ -147,7 +158,7 @@ class VideoWindow(QMainWindow):
     # function to reset the video playback position to '0' once the media finishes playing
     def check_media_status(self, status):
         if status==QMediaPlayer.EndOfMedia:
-            self.mediaPlayer.setPosition(0)
+            self.media_player.setPosition(0)
 
     # resizes the video to the resolution of the file defined by its meta data
     def resize_to_video(self):
