@@ -155,8 +155,8 @@ class VideoWindow(QMainWindow):
         # Add keyboard shortcuts
         QShortcut(QKeySequence(Qt.Key_Space), self, self.toggle_play_pause) #play-pause spacebar toggle
         QShortcut(QKeySequence(Qt.Key_S), self, self.media_player.stop) #stop video with 'S'
-        QShortcut(QKeySequence(Qt.Key_Down), self, self.decrease_speed) #decrease speed with 'down'
-        QShortcut(QKeySequence(Qt.Key_Up), self, self.increase_speed) #increase speed with 'up'
+        QShortcut(QKeySequence(Qt.Key_BracketLeft), self, self.decrease_speed) #decrease speed with 'down'
+        QShortcut(QKeySequence(Qt.Key_BracketRight), self, self.increase_speed) #increase speed with 'up'
         QShortcut(QKeySequence(Qt.Key_Right), self, self.fast_forward) #fast forward video with 'right'
         QShortcut(QKeySequence(Qt.Key_Left), self, self.rewind) #rewind video with 'left'
 
@@ -218,11 +218,12 @@ class VideoWindow(QMainWindow):
         if self.media_player.state() == QMediaPlayer.PlayingState:
             self.media_player.pause()
             self.play_pause_button.setText("Play")
-            # Adjust size of central widget after changing button text
-            self.centralWidget().adjustSize()
+            # # Adjust size of central widget after changing button text
+            # self.centralWidget().adjustSize()
         else:
-            self.media_player.play()# Adjust size of central widget after changing button text
-            self.centralWidget().adjustSize()
+            self.media_player.play()
+            # # Adjust size of central widget after changing button text
+            # self.centralWidget().adjustSize()
             self.play_pause_button.setText("Pause")
 
     
