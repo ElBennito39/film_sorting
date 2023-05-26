@@ -4,7 +4,9 @@ from PySide2.QtMultimedia import QMediaPlayer, QMediaContent
 from PySide2.QtMultimediaWidgets import QVideoWidget
 from PySide2.QtCore import QUrl, QSize, Qt
 from PySide2.QtGui import QKeySequence
+from datetime import timedelta
 import os
+
 
 # Create a main window class
 class VideoWindow(QMainWindow):
@@ -25,25 +27,40 @@ class VideoWindow(QMainWindow):
         self.video_widget = QVideoWidget()
 
         # set the size policy
-        self.video_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.video_widget.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
 
 
         # Add buttons
         self.play_pause_button = QPushButton("Play")
         self.stop_button = QPushButton("Stop")
-        
+        self.fast_forward_button = QPushButton("Fast Forward")
+        self.rewind_button = QPushButton("Rewind")
+
         # set the size policy
-        self.play_pause_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        self.stop_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.play_pause_button.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        self.stop_button.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        self.fast_forward_button.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        self.rewind_button.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
 
 
-        # Connect the buttons to the respective methods
-        # self.play_button.clicked.connect(self.media_player.play)
-        # self.play_button.clicked.connect(self.play_pause_button)
-        # self.pause_button.clicked.connect(self.media_player.pause)
-        # self.pause_button.clicked.connect(self.play_pause_button)
+        # Connect the playback buttons to the respective methods
         self.play_pause_button.clicked.connect(self.toggle_play_pause)
         self.stop_button.clicked.connect(self.media_player.stop)
+        self.fast_forward_button.clicked.connect(self.fast_forward)
+        self.rewind_button.clicked.connect(self.rewind)
+
+        # Add video position slider
+        self.position_slider = QSlider(Qt.Horizontal)
+        self.position_slider.setRange(0, 0)
+        self.position_slider.sliderMoved.connect(self.set_position)
+
+        # Add labels for video position and duration
+        self.position_label = QLabel()
+        self.duration_label = QLabel()
+
+        # Connect the media player's positionChanged and durationChanged signals
+        self.media_player.positionChanged.connect(self.position_changed)
+        self.media_player.durationChanged.connect(self.duration_changed)
 
         # Add speed slider selection
         self.speed_slider = QSlider(Qt.Horizontal)
@@ -64,16 +81,16 @@ class VideoWindow(QMainWindow):
 
         # Create a central widget to anchor boxs of widgets
         central_widget = QWidget() #create central widget
-        self.setCentralWidget(central_widget) #set is as central
+        self.setCentralWidget(central_widget)#set is as central
         # central_widget.setLayout(layout) #add the layout to the central widget
+    
 
         # Create a layout and add the playback widgets
         layout_box = QVBoxLayout()
-        # layout.addWidget(self.video_widget) #lets move it out of layout
         layout_box.addWidget(self.play_pause_button)
-        # layout_box.addWidget(self.pause_button)
         layout_box.addWidget(self.stop_button)
-        # layout.addWidget(self.playlist)
+        layout_box.addWidget(self.fast_forward_button)
+        layout_box.addWidget(self.rewind_button)
         layout_box.addWidget(self.speed_slider)
         layout_box.addWidget(self.speed_label)
 
@@ -86,9 +103,23 @@ class VideoWindow(QMainWindow):
         splitter.addWidget(playback_widget) #add playback to the split display box
         splitter.setSizes([self.width() / 4, 3 * self.width() / 4])
 
+
+        # Create a splitter for duration/position labels
+        split_dur_pos_labels = QSplitter()
+        split_dur_pos_labels.addWidget(self.position_label)
+        split_dur_pos_labels.addWidget(self.duration_label)
+
+        #Create a splitter for the position slider and duration/position labels
+        split_pos_slider = QSplitter()
+        split_pos_slider.addWidget(self.position_slider)
+        split_pos_slider.addWidget(split_dur_pos_labels)
+
         # create a main layout for the central widget
         main_layout = QVBoxLayout()
         main_layout.addWidget(self.video_widget) #add video widget for the top of the box
+        main_layout.addWidget(split_pos_slider)
+        # main_layout.addWidget(self.position_slider) # add position slider underneath the video widget
+        # main_layout.addWidget(split_dur_pos_labels) # add duration and position labels (splitter)
         main_layout.addWidget(splitter) #add the split box of playlist and playback buttons
         
         # Assign the main layout to the central widget
@@ -124,8 +155,11 @@ class VideoWindow(QMainWindow):
         # Add keyboard shortcuts
         QShortcut(QKeySequence(Qt.Key_Space), self, self.toggle_play_pause) #play-pause spacebar toggle
         QShortcut(QKeySequence(Qt.Key_S), self, self.media_player.stop) #stop video with 'S'
-        QShortcut(QKeySequence(Qt.Key_Down), self, self.decrease_speed) #decrease speed with 'left'
-        QShortcut(QKeySequence(Qt.Key_Up), self, self.increase_speed) #increase speed with 'right'
+        QShortcut(QKeySequence(Qt.Key_Down), self, self.decrease_speed) #decrease speed with 'down'
+        QShortcut(QKeySequence(Qt.Key_Up), self, self.increase_speed) #increase speed with 'up'
+        QShortcut(QKeySequence(Qt.Key_Right), self, self.fast_forward) #fast forward video with 'right'
+        QShortcut(QKeySequence(Qt.Key_Left), self, self.rewind) #rewind video with 'left'
+
 
 
 
@@ -135,7 +169,7 @@ class VideoWindow(QMainWindow):
 
     # function to open dialog box for selecting directory of video
     def open_directory(self):
-        dir_name = QFileDialog.getExistingDirectory(self, "Open Directory",options=QFileDialog.DontUseNativeDialog)
+        dir_name = QFileDialog.getExistingDirectory(self, "Open Directory") #,options=QFileDialog.DontUseNativeDialog)
 
         if dir_name:
             self.playlist.clear()
@@ -184,9 +218,44 @@ class VideoWindow(QMainWindow):
         if self.media_player.state() == QMediaPlayer.PlayingState:
             self.media_player.pause()
             self.play_pause_button.setText("Play")
+            # Adjust size of central widget after changing button text
+            self.centralWidget().adjustSize()
         else:
-            self.media_player.play()
+            self.media_player.play()# Adjust size of central widget after changing button text
+            self.centralWidget().adjustSize()
             self.play_pause_button.setText("Pause")
+
+    
+    # Fast forwards the video by 3 seconds
+    def fast_forward(self):
+        position = self.media_player.position() + 3000  # Get the current position and add 3000 milliseconds to it
+        self.media_player.setPosition(position)  # Set the new position
+
+    # Rewinds the video by 3 seconds
+    def rewind(self):
+        position = self.media_player.position() - 3000  # Get the current position and subtract 3000 milliseconds from it
+        self.media_player.setPosition(max(position, 0))  # Set the new position, don't go below 0
+
+    # Set the position of the video to the slider position
+    def set_position(self, position):
+        self.media_player.setPosition(position)
+
+    # Update the slider position as the video plays
+    def position_changed(self, position):
+        self.position_slider.setValue(position)
+        self.position_label.setText(f"Time:    {self.format_time(position)}    /") #update the position label on position change
+
+    # Update the range of the slider when the video duration changes (like when a new video is selected)
+    def duration_changed(self, duration):
+        self.position_slider.setRange(0, duration)
+        self.duration_label.setText(self.format_time(duration)) #update the duration label on duration change
+
+    def format_time(self, millis):
+        formatted_time = str(timedelta(milliseconds=millis))
+        seconds_index = formatted_time.find('.')
+        if seconds_index != -1:  # If there are decimal places
+            formatted_time = formatted_time[:seconds_index+2]  # Only keep one decimal place
+        return formatted_time
 
 
 
