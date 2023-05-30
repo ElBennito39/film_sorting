@@ -19,7 +19,7 @@ class VideoWindow(QMainWindow):
         self.current_dir = None
 
         # Set initial size of the window to 60% of the screen size
-        screen_geometry = QDesktopWidget().screenGeometry()
+        screen_geometry = QApplication.primaryScreen().geometry()
         self.resize(screen_geometry.width() * 0.6, screen_geometry.height() * 0.6)
 
         # Set up the media player and video widget
@@ -53,6 +53,7 @@ class VideoWindow(QMainWindow):
         self.position_slider = QSlider(Qt.Horizontal)
         self.position_slider.setRange(0, 0)
         self.position_slider.sliderMoved.connect(self.set_position)
+        self.position_slider.setFixedHeight(15)
 
         # Add labels for video position and duration
         self.position_label = QLabel()
@@ -76,54 +77,109 @@ class VideoWindow(QMainWindow):
 
         # Create playlist widget
         self.playlist = QListWidget()
+        # set a fixed width for the playlist based on the window size
+        # self.playlist.setFixedWidth(self.width() * 0.15)
 
 
+        ### Window Layout ###
 
-        # Create a central widget to anchor boxs of widgets
+        # Create a central widget to anchor boxes of widgets
         central_widget = QWidget() #create central widget
         self.setCentralWidget(central_widget)#set is as central
-        # central_widget.setLayout(layout) #add the layout to the central widget
-    
 
-        # Create a layout and add the playback widgets
-        layout_box = QVBoxLayout()
-        layout_box.addWidget(self.play_pause_button)
-        layout_box.addWidget(self.stop_button)
-        layout_box.addWidget(self.fast_forward_button)
-        layout_box.addWidget(self.rewind_button)
-        layout_box.addWidget(self.speed_slider)
-        layout_box.addWidget(self.speed_label)
-
-
-        # Create a splitter for the playlist and the playback buttons
-        splitter = QSplitter() 
-        splitter.addWidget(self.playlist) #add playlist to the split display box
-        playback_widget = QWidget() #create a widget for to hold the playback buttons
-        playback_widget.setLayout(layout_box) #give the button layout to the playback widget
-        splitter.addWidget(playback_widget) #add playback to the split display box
-        splitter.setSizes([self.width() / 4, 3 * self.width() / 4])
-
-
-        # Create a splitter for duration/position labels
-        split_dur_pos_labels = QSplitter()
-        split_dur_pos_labels.addWidget(self.position_label)
-        split_dur_pos_labels.addWidget(self.duration_label)
-
-        #Create a splitter for the position slider and duration/position labels
-        split_pos_slider = QSplitter()
-        split_pos_slider.addWidget(self.position_slider)
-        split_pos_slider.addWidget(split_dur_pos_labels)
-
-        # create a main layout for the central widget
+        # Create main layout
         main_layout = QVBoxLayout()
-        main_layout.addWidget(self.video_widget) #add video widget for the top of the box
-        main_layout.addWidget(split_pos_slider)
-        # main_layout.addWidget(self.position_slider) # add position slider underneath the video widget
-        # main_layout.addWidget(split_dur_pos_labels) # add duration and position labels (splitter)
-        main_layout.addWidget(splitter) #add the split box of playlist and playback buttons
+
+        #Create a label to display the file path
+        self.file_path_label = QLabel()  # File path label
         
+        #Add the label to the main layout
+        main_layout.addWidget(self.file_path_label)
+
+        # Create a horizontal splitter for the top half of the window
+        top_half = QSplitter(Qt.Horizontal)
+        top_half.addWidget(self.playlist)
+        top_half.addWidget(self.video_widget)
+        top_half.setSizes([self.width() / 5, 4 * self.width() / 5])
+
+        # Add the top_half splitter to the main layout
+        main_layout.addWidget(top_half, stretch=1)
+
+        # Create a layout for the position slider and label
+        position_section = QHBoxLayout()
+        position_section.addWidget(self.position_slider)
+        position_section.addWidget(self.position_label)
+        position_section.addWidget(self.duration_label)
+
+        position_widget = QWidget()
+        position_widget.setLayout(position_section)
+
+        # Add the position_section layout to the main layout
+        main_layout.addWidget(position_widget)
+
+        # Create a widget and layout for the buttons
+        button_widget = QWidget()
+        button_layout = QGridLayout()
+        button_layout.addWidget(self.play_pause_button, 0, 0)
+        button_layout.addWidget(self.stop_button, 0, 1)
+        button_layout.addWidget(self.fast_forward_button, 1, 0)
+        button_layout.addWidget(self.rewind_button, 1, 1)
+        button_widget.setLayout(button_layout)
+
+        # Add the button_section widget to the main layout
+        main_layout.addWidget(button_widget)
+
+        # Create a layout for the speed slider and label
+        speed_section = QHBoxLayout()
+        speed_section.addWidget(self.speed_slider)
+        speed_section.addWidget(self.speed_label)
+        speed_widget = QWidget()
+        speed_widget.setLayout(speed_section)
+
+        # Add the speed_section layout to the main layout
+        main_layout.addWidget(speed_widget)
+
+        # # Create a widget and layout for future buttons
+        # future_button_section = QWidget()
+        # future_button_layout = QGridLayout()
+        # # (Add future buttons to the layout here)
+        # future_button_section.setLayout(future_button_layout)
+
+        # # Add the future_button_section widget to the main layout
+        # main_layout.addWidget(future_button_section)
+
         # Assign the main layout to the central widget
         central_widget.setLayout(main_layout)
+
+
+        # Set a minimum size for the video widget
+        self.video_widget.setMinimumSize(500, 400)
+
+        # Set maximum heights for the button and slider sections
+        
+        button_widget.setMaximumHeight(120)
+        speed_widget.setMaximumHeight(75)
+        position_widget.setMaximumHeight(75)
+
+        # Increase the minimum height of the buttons and the maximum height of their container
+        self.play_pause_button.setMinimumHeight(50)
+        self.play_pause_button.setMaximumWidth(300)
+
+        self.stop_button.setMinimumHeight(50)
+        self.stop_button.setMaximumWidth(300)
+
+        self.fast_forward_button.setMinimumHeight(50)
+        self.fast_forward_button.setMaximumWidth(300)
+
+        self.rewind_button.setMinimumHeight(50)
+        self.rewind_button.setMaximumWidth(300)
+
+
+
+
+
+
+
 
         # Set the video output from media player to widget
         self.media_player.setVideoOutput(self.video_widget)
@@ -137,10 +193,6 @@ class VideoWindow(QMainWindow):
         # Connect the playlist's signal to change the video
         self.playlist.itemClicked.connect(self.change_video) #clicking the file
         self.playlist.itemActivated.connect(self.change_video) #activating the file with 'enter'
-
-
-        
-        
 
         # Create the menu bar
         menu_bar = self.menuBar()
@@ -188,6 +240,9 @@ class VideoWindow(QMainWindow):
             # Construct the absolute path to the file
             absolute_path = os.path.join(self.current_dir, file_name)
             self.media_player.setMedia(QMediaContent(QUrl.fromLocalFile(absolute_path)))
+            # Set the label's text to the absolute path
+            self.file_path_label.setText(absolute_path) 
+
 
     # function to reset the video playback position to '0' once the media finishes playing
     def check_media_status(self, status):
