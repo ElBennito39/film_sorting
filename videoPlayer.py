@@ -18,6 +18,10 @@ class VideoWindow(QMainWindow):
         # Store the current directory
         self.current_dir = None
 
+        # Add a list of directories for playlists
+        self.dirs_list = []
+        self.file_paths = {}  # List to store absolute paths
+
         # Set initial size of the window to 60% of the screen size
         screen_geometry = QApplication.primaryScreen().geometry()
         self.resize(screen_geometry.width() * 0.6, screen_geometry.height() * 0.6)
@@ -29,25 +33,30 @@ class VideoWindow(QMainWindow):
         # set the size policy
         self.video_widget.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
 
+        # Create QActions for playback functionality
+        self.stop_action = QAction("Stop", self)
+        self.fast_forward_action = QAction("Fast Forward", self)
+        self.rewind_action = QAction("Rewind", self)
 
-        # Add buttons
-        self.play_pause_button = QPushButton("Play")
-        self.stop_button = QPushButton("Stop")
-        self.fast_forward_button = QPushButton("Fast Forward")
-        self.rewind_button = QPushButton("Rewind")
-
-        # set the size policy
-        self.play_pause_button.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-        self.stop_button.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-        self.fast_forward_button.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-        self.rewind_button.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-
-
-        # Connect the playback buttons to the respective methods
+        # Connect the playback actions to the respective methods
+        self.stop_action.triggered.connect(self.media_player.stop)
+        self.fast_forward_action.triggered.connect(self.fast_forward)
+        self.rewind_action.triggered.connect(self.rewind)
+        
+        # Create QToolButton so we can control the size of play-pause function interfacte
+        self.play_pause_button = QToolButton()
+        self.play_pause_button.setText("Play")
+        
+        # Connect the play pause button to the respective method
         self.play_pause_button.clicked.connect(self.toggle_play_pause)
-        self.stop_button.clicked.connect(self.media_player.stop)
-        self.fast_forward_button.clicked.connect(self.fast_forward)
-        self.rewind_button.clicked.connect(self.rewind)
+        self.play_pause_button.setFixedWidth(self.play_pause_button.fontMetrics().width('Pause') + 20)
+
+        # Create a toolbar and add the actions
+        self.toolbar = self.addToolBar("Playback")
+        self.toolbar.addWidget(self.play_pause_button)
+        self.toolbar.addAction(self.stop_action)
+        self.toolbar.addAction(self.fast_forward_action)
+        self.toolbar.addAction(self.rewind_action)
 
         # Add video position slider
         self.position_slider = QSlider(Qt.Horizontal)
@@ -77,9 +86,6 @@ class VideoWindow(QMainWindow):
 
         # Create playlist widget
         self.playlist = QListWidget()
-        # set a fixed width for the playlist based on the window size
-        # self.playlist.setFixedWidth(self.width() * 0.15)
-
 
         ### Window Layout ###
 
@@ -117,17 +123,8 @@ class VideoWindow(QMainWindow):
         # Add the position_section layout to the main layout
         main_layout.addWidget(position_widget)
 
-        # Create a widget and layout for the buttons
-        button_widget = QWidget()
-        button_layout = QGridLayout()
-        button_layout.addWidget(self.play_pause_button, 0, 0)
-        button_layout.addWidget(self.stop_button, 0, 1)
-        button_layout.addWidget(self.fast_forward_button, 1, 0)
-        button_layout.addWidget(self.rewind_button, 1, 1)
-        button_widget.setLayout(button_layout)
-
-        # Add the button_section widget to the main layout
-        main_layout.addWidget(button_widget)
+        # Add tool bar to main layout
+        main_layout.addWidget(self.toolbar)
 
         # Create a layout for the speed slider and label
         speed_section = QHBoxLayout()
@@ -139,47 +136,17 @@ class VideoWindow(QMainWindow):
         # Add the speed_section layout to the main layout
         main_layout.addWidget(speed_widget)
 
-        # # Create a widget and layout for future buttons
-        # future_button_section = QWidget()
-        # future_button_layout = QGridLayout()
-        # # (Add future buttons to the layout here)
-        # future_button_section.setLayout(future_button_layout)
-
-        # # Add the future_button_section widget to the main layout
-        # main_layout.addWidget(future_button_section)
-
         # Assign the main layout to the central widget
         central_widget.setLayout(main_layout)
-
 
         # Set a minimum size for the video widget
         self.video_widget.setMinimumSize(500, 400)
 
         # Set maximum heights for the button and slider sections
-        
-        button_widget.setMaximumHeight(120)
         speed_widget.setMaximumHeight(75)
         position_widget.setMaximumHeight(75)
 
-        # Increase the minimum height of the buttons and the maximum height of their container
-        self.play_pause_button.setMinimumHeight(50)
-        self.play_pause_button.setMaximumWidth(300)
-
-        self.stop_button.setMinimumHeight(50)
-        self.stop_button.setMaximumWidth(300)
-
-        self.fast_forward_button.setMinimumHeight(50)
-        self.fast_forward_button.setMaximumWidth(300)
-
-        self.rewind_button.setMinimumHeight(50)
-        self.rewind_button.setMaximumWidth(300)
-
-
-
-
-
-
-
+        ### Connect media and signals ###
 
         # Set the video output from media player to widget
         self.media_player.setVideoOutput(self.video_widget)
@@ -189,6 +156,9 @@ class VideoWindow(QMainWindow):
 
         # Connect the media player's state signal to reset video position at end of media.
         self.media_player.mediaStatusChanged.connect(self.check_media_status)
+
+        # Connect the media player's state changed signal to change the action text
+        self.media_player.stateChanged.connect(self.update_play_pause_action_text)
 
         # Connect the playlist's signal to change the video
         self.playlist.itemClicked.connect(self.change_video) #clicking the file
@@ -217,31 +187,63 @@ class VideoWindow(QMainWindow):
 
     ##FUNCTIONS BELOW
 
-       
+    # def open_directory(self):
+    #     dir_name = QFileDialog.getExistingDirectory(self, "Open Directory")
+    #     if dir_name:
+    #         # Find all video files in the directory and its subdirectories
+    #         for root, dirs, files in os.walk(dir_name):
+    #             for file_name in files:
+    #                 if file_name.endswith((".mp4", ".mov", ".mkv", ".flv", ".ts")):  # Add other video formats as needed
+    #                     absolute_path = os.path.join(root, file_name)
 
-    # function to open dialog box for selecting directory of video
+    #                     # Check if the file is already present in the playlist
+    #                     if absolute_path not in self.file_paths:
+    #                         self.file_paths.append(absolute_path)  # Add the absolute path to the list
+
+    #                         # Create a playlist item with up to two directories and the file name
+    #                         playlist_item = "/".join(absolute_path.split("/")[-3:])
+    #                         self.playlist.addItem(playlist_item)
+
     def open_directory(self):
-        dir_name = QFileDialog.getExistingDirectory(self, "Open Directory") #,options=QFileDialog.DontUseNativeDialog)
-
+        dir_name = QFileDialog.getExistingDirectory(self, "Open Directory")
         if dir_name:
-            self.playlist.clear()
-            self.current_dir = dir_name  # Store the directory name
+            # Find all video files in the directory and its subdirectories
+            for root, dirs, files in os.walk(dir_name):
+                for file_name in files:
+                    if file_name.endswith((".mp4", ".mov", ".mkv", ".flv", ".ts")):  # Add other video formats as needed
+                        absolute_path = os.path.join(root, file_name)
 
-            # Find all video files in the directory
-            for file_name in os.listdir(dir_name):
-                if file_name.endswith((".mp4",".mov",".mkv",".flv",".ts")):  # Add other video formats as needed
-                    self.playlist.addItem(file_name)
+                        # Create a playlist item with up to two directories and the file name
+                        playlist_item = "/".join(absolute_path.split("/")[-3:])
+                        
+                        # Only add new item if it's not already in the playlist
+                        if playlist_item not in self.file_paths:
+                            self.file_paths[playlist_item] = absolute_path  # Add the absolute path to the dictionary
+                            self.playlist.addItem(playlist_item)
     
-    # function to change the video to be selected in the playlist
-    def change_video(self, item):
-        file_name = item.text()
+    # # function to change the video to be selected in the playlist
+    # def change_video(self, item):
+    #     relative_path = item.text()
 
-        if file_name != '':
-            # Construct the absolute path to the file
-            absolute_path = os.path.join(self.current_dir, file_name)
-            self.media_player.setMedia(QMediaContent(QUrl.fromLocalFile(absolute_path)))
-            # Set the label's text to the absolute path
-            self.file_path_label.setText(absolute_path) 
+    #     if relative_path != '':
+    #         for absolute_path in self.file_paths:
+    #             if absolute_path.endswith(relative_path):
+    #                 self.media_player.setMedia(QMediaContent(QUrl.fromLocalFile(absolute_path)))
+    #                 # Set the label's text to the absolute path
+    #                 self.file_path_label.setText(absolute_path)
+    #                 break
+
+    def change_video(self, item):
+        relative_path = item.text()
+
+        if relative_path != '':
+            # Look up the absolute path in the dictionary
+            absolute_path = self.file_paths.get(relative_path)
+            
+            if absolute_path:
+                self.media_player.setMedia(QMediaContent(QUrl.fromLocalFile(absolute_path)))
+                # Set the label's text to the absolute path
+                self.file_path_label.setText(absolute_path)
 
 
     # function to reset the video playback position to '0' once the media finishes playing
@@ -272,16 +274,16 @@ class VideoWindow(QMainWindow):
     def toggle_play_pause(self):
         if self.media_player.state() == QMediaPlayer.PlayingState:
             self.media_player.pause()
-            self.play_pause_button.setText("Play")
-            # # Adjust size of central widget after changing button text
-            # self.centralWidget().adjustSize()
         else:
             self.media_player.play()
-            # # Adjust size of central widget after changing button text
-            # self.centralWidget().adjustSize()
+        
+    # method to update the play_pause action's text
+    def update_play_pause_action_text(self, state):
+        if state == QMediaPlayer.PlayingState:
             self.play_pause_button.setText("Pause")
+        else:
+            self.play_pause_button.setText("Play")
 
-    
     # Fast forwards the video by 3 seconds
     def fast_forward(self):
         position = self.media_player.position() + 3000  # Get the current position and add 3000 milliseconds to it
