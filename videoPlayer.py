@@ -37,11 +37,15 @@ class VideoWindow(QMainWindow):
         self.stop_action = QAction("Stop", self)
         self.fast_forward_action = QAction("Fast Forward", self)
         self.rewind_action = QAction("Rewind", self)
+        self.next_action = QAction('Next', self)
+        self.prev_action = QAction('Previous', self)
 
         # Connect the playback actions to the respective methods
         self.stop_action.triggered.connect(self.media_player.stop)
         self.fast_forward_action.triggered.connect(self.fast_forward)
         self.rewind_action.triggered.connect(self.rewind)
+        self.next_action.triggered.connect(self.next_video)
+        self.prev_action.triggered.connect(self.prev_video)
         
         # Create QToolButton so we can control the size of play-pause function interfacte
         self.play_pause_button = QToolButton()
@@ -51,12 +55,29 @@ class VideoWindow(QMainWindow):
         self.play_pause_button.clicked.connect(self.toggle_play_pause)
         self.play_pause_button.setFixedWidth(self.play_pause_button.fontMetrics().width('Pause') + 20)
 
-        # Create a toolbar and add the actions
+        # Create a checkbox for auto-play next
+        self.auto_play_next_checkbox = QCheckBox("Auto-Next")
+        self.auto_play_next_checkbox.stateChanged.connect(self.set_auto_play_next)
+
+
+        # Store the auto-play next setting
+        self.auto_play_next = False
+
+        # Create a toolbar and add the buttons, actions, checkbox
         self.toolbar = self.addToolBar("Playback")
         self.toolbar.addWidget(self.play_pause_button)
+        self.toolbar.addSeparator() 
         self.toolbar.addAction(self.stop_action)
-        self.toolbar.addAction(self.fast_forward_action)
+        self.toolbar.addSeparator()
         self.toolbar.addAction(self.rewind_action)
+        self.toolbar.addAction(self.fast_forward_action)
+        self.toolbar.addSeparator()
+        self.toolbar.addAction(self.prev_action)
+        self.toolbar.addAction(self.next_action)
+        self.toolbar.addSeparator()
+        self.toolbar.addWidget(self.auto_play_next_checkbox)
+
+
 
         # Add video position slider
         self.position_slider = QSlider(Qt.Horizontal)
@@ -181,29 +202,15 @@ class VideoWindow(QMainWindow):
         QShortcut(QKeySequence(Qt.Key_BracketRight), self, self.increase_speed) #increase speed with 'up'
         QShortcut(QKeySequence(Qt.Key_Right), self, self.fast_forward) #fast forward video with 'right'
         QShortcut(QKeySequence(Qt.Key_Left), self, self.rewind) #rewind video with 'left'
-
+        QShortcut(QKeySequence(Qt.CTRL + Qt.Key_BracketRight), self, self.next_video)  # next video with 'Ctrl+right'
+        QShortcut(QKeySequence(Qt.CTRL + Qt.Key_BracketLeft), self, self.prev_video)  # previous video with 'Ctrl+left'
+        QShortcut(QKeySequence(Qt.CTRL + Qt.Key_A),self,self.toggle_auto_play_next)
 
 
 
     ##FUNCTIONS BELOW
 
-    # def open_directory(self):
-    #     dir_name = QFileDialog.getExistingDirectory(self, "Open Directory")
-    #     if dir_name:
-    #         # Find all video files in the directory and its subdirectories
-    #         for root, dirs, files in os.walk(dir_name):
-    #             for file_name in files:
-    #                 if file_name.endswith((".mp4", ".mov", ".mkv", ".flv", ".ts")):  # Add other video formats as needed
-    #                     absolute_path = os.path.join(root, file_name)
-
-    #                     # Check if the file is already present in the playlist
-    #                     if absolute_path not in self.file_paths:
-    #                         self.file_paths.append(absolute_path)  # Add the absolute path to the list
-
-    #                         # Create a playlist item with up to two directories and the file name
-    #                         playlist_item = "/".join(absolute_path.split("/")[-3:])
-    #                         self.playlist.addItem(playlist_item)
-
+    #function to open video files in directories and their subdirectories and put them in a playlist
     def open_directory(self):
         dir_name = QFileDialog.getExistingDirectory(self, "Open Directory")
         if dir_name:
@@ -221,18 +228,7 @@ class VideoWindow(QMainWindow):
                             self.file_paths[playlist_item] = absolute_path  # Add the absolute path to the dictionary
                             self.playlist.addItem(playlist_item)
     
-    # # function to change the video to be selected in the playlist
-    # def change_video(self, item):
-    #     relative_path = item.text()
-
-    #     if relative_path != '':
-    #         for absolute_path in self.file_paths:
-    #             if absolute_path.endswith(relative_path):
-    #                 self.media_player.setMedia(QMediaContent(QUrl.fromLocalFile(absolute_path)))
-    #                 # Set the label's text to the absolute path
-    #                 self.file_path_label.setText(absolute_path)
-    #                 break
-
+    # Function to change the video file to play
     def change_video(self, item):
         relative_path = item.text()
 
@@ -245,11 +241,20 @@ class VideoWindow(QMainWindow):
                 # Set the label's text to the absolute path
                 self.file_path_label.setText(absolute_path)
 
+    # Function to set the auto-play next setting
+    def set_auto_play_next(self, state):
+        self.auto_play_next = state == Qt.Checked
+    
+    def toggle_auto_play_next(self):
+        self.auto_play_next_checkbox.setChecked(not self.auto_play_next_checkbox.isChecked())
 
-    # function to reset the video playback position to '0' once the media finishes playing
+    # Function to reset the video playback position to '0' once the media finishes playing.
     def check_media_status(self, status):
-        if status==QMediaPlayer.EndOfMedia:
+        if status == QMediaPlayer.EndOfMedia:
             self.media_player.setPosition(0)
+            if self.auto_play_next_checkbox.isChecked():
+                self.next_video()
+                self.media_player.play()
 
     # resizes the video to the resolution of the file defined by its meta data
     def resize_to_video(self):
@@ -294,6 +299,20 @@ class VideoWindow(QMainWindow):
         position = self.media_player.position() - 3000  # Get the current position and subtract 3000 milliseconds from it
         self.media_player.setPosition(max(position, 0))  # Set the new position, don't go below 0
 
+    # Change to next item in the playlist - call change_video to change the video.
+    def next_video(self):
+        current_row = self.playlist.currentRow()
+        if current_row < self.playlist.count() - 1:
+            self.playlist.setCurrentRow(current_row + 1)
+            self.change_video(self.playlist.currentItem())
+
+    # Change to previous item in the playlist - call change_video to change the video.
+    def prev_video(self):
+        current_row = self.playlist.currentRow()
+        if current_row > 0:
+            self.playlist.setCurrentRow(current_row - 1)
+            self.change_video(self.playlist.currentItem())    
+    
     # Set the position of the video to the slider position
     def set_position(self, position):
         self.media_player.setPosition(position)
