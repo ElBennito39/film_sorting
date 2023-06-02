@@ -1,0 +1,16 @@
+
+QLabel {
+    font-size: 8pt;
+}
+QPushButton {
+    font-size: 8pt;
+}
+QCheckBox {
+    font-size: 8pt;
+}
+QComboBox {
+    font-size: 8pt;
+}
+QToolButton {
+    font-size: 8pt;
+}
