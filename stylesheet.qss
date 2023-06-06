@@ -2,15 +2,47 @@
 QLabel {
     font-size: 8pt;
 }
+
+
 QPushButton {
     font-size: 8pt;
+    
 }
+QPushButton:focus {
+    border: 1px solid navy;
+}
+
+
 QCheckBox {
     font-size: 8pt;
 }
+QCheckBox:focus {
+    border: 1px solid navy;
+}
+
+
 QComboBox {
     font-size: 8pt;
 }
+QComboBox:focus {
+    border: 1px solid navy;
+}
+
+
 QToolButton {
     font-size: 8pt;
+}
+QToolButton:focus {
+    border: 1px solid navy;
+}
+
+
+
+
+QListWidget::item:focus {
+    padding: 3px;
+}
+
+QListWidget:focus {
+    border: 5px solid navy;
 }
