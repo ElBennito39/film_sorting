@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import shlex
 import base64
+import binascii
 
 ##FUNCTIONS BELOW
 
@@ -126,38 +127,37 @@ def load_tags_from_video(video_file_path):
 
     # Split the command into arguments for subprocess
     args = shlex.split(command)
-    
+
     # Run the command and capture the output
     process = subprocess.run(args, capture_output=True, text=True)
-    
+
     # Get the output as a string
     base64_comment = process.stdout.strip()
 
-    print(f'Base64 comment: {base64_comment}')  # Print the base64 comment
+    # If the base64_comment is empty, return None. This way we can set the defaults when there is no tagging meta data present.
+    if not base64_comment:
+        return None
 
-    # Convert the base64 string into bytes
-    base64_bytes = base64_comment.encode('utf-8')
+    try:
+        # Convert the base64 string into bytes. If it's not a valid base64 string, this will raise a binascii.Error.
+        base64_bytes = base64_comment.encode('utf-8')
+        comment_bytes = base64.b64decode(base64_bytes)
 
-    print(f'Base64 bytes: {base64_bytes}')  # Print the base64 bytes
+        # Convert the bytes back into a string
+        comment = comment_bytes.decode('utf-8')
 
-    # Decode the base64 bytes into a string
-    comment_bytes = base64.b64decode(base64_bytes)
+    except binascii.Error:  # This error is raised when the input string cannot be decoded as base64
+        # If the comment is not a valid base64 string, we return None,
+        # treating this case as if the comments section was empty.
+        return None
 
-    print(f'Comment bytes: {comment_bytes}')  # Print the comment bytes
-
-    # Convert the bytes back into a string
-    comment = comment_bytes.decode('utf-8')
-
-    print(f'Comment: {comment}')  # Print the comment
-
-    # Parse the JSON string into a Python dictionary
-    tag_states_json = json.loads(comment)
-
-    print(f' Tag States Json: {tag_states_json}')
-
-    return tag_states_json
-
-
+    try:
+        # Try to parse the JSON string into a Python dictionary
+        tag_states_json = json.loads(comment)
+        return tag_states_json
+    except json.JSONDecodeError:
+        # If the comment isn't valid JSON, return None
+        return None
 
 def set_from_comments(video_window_instance, tag_states_json):
     """
