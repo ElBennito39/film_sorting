@@ -485,7 +485,7 @@ class VideoWindow(QMainWindow):
         self.playlist.itemClicked.connect(lambda item: change_video(self, item)) #clicking the file
         self.playlist.itemActivated.connect(lambda item: change_video(self, item)) #activating the file with 'enter'
         # load the tagging data from the comments of the video file activated. set the tagging interface
-        self.playlist.itemActivated.connect(lambda: set_from_comments(self, load_tags_from_video(self.file_path_label.text())))
+        # self.playlist.itemActivated.connect(lambda: set_from_comments(self, load_tags_from_video(self.file_path_label.text())))
         self.playlist.itemActivated.connect(lambda: set_from_comments(self, load_tags_from_video(self.file_path_label.text())) if load_tags_from_video(self.file_path_label.text()) is not None else set_default_tagging_data(self))
 
 
