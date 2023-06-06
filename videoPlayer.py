@@ -474,33 +474,9 @@ class VideoWindow(QMainWindow):
         # Set the video output from media player to widget
         self.media_player.setVideoOutput(self.video_widget)
 
-        # Connect the media player's state signal to reset video position at end of media.""" 
-PySide2 Video Application for the review of hockey film.
-
-author: Brien Bennett
-website: BennettHockey.com
-
-Application will:
-    facilitate video playback, 
-    tagging of hockey meta data to video files,
-    enhance film review.
-    
-
-"""
+        # Connect the media player's state signal to reset video position at end of media.
         self.media_player.mediaStatusChanged.connect(lambda status: check_media_status(self,status))
-""" 
-PySide2 Video Application for the review of hockey film.
 
-author: Brien Bennett
-website: BennettHockey.com
-
-Application will:
-    facilitate video playback, 
-    tagging of hockey meta data to video files,
-    enhance film review.
-    
-
-"""
         # Connect the media player's state changed signal to change the action text
         self.media_player.stateChanged.connect(lambda state: update_play_pause_action_text(self,state))
 
