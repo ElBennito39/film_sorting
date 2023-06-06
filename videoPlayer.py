@@ -13,9 +13,8 @@ Application will:
 """
 #Importing
 from PySide2.QtWidgets import *
-from PySide2.QtMultimedia import QMediaPlayer, QMediaContent
-from PySide2.QtMultimediaWidgets import QVideoWidget
-from PySide2.QtCore import QUrl, QSize, Qt
+from PySide2.QtMultimedia import QMediaPlayer
+from PySide2.QtCore import Qt
 from PySide2.QtGui import QKeySequence, QFont
 import code
 
@@ -24,7 +23,7 @@ import os, json
 
 from videoFunctions import *
 from taggingFunctions import *
-from custom_widgets import ClickableVideoWidget
+from custom_widgets import ClickableVideoWidget, MyListWidget
 
 # Create a main window class
 class VideoWindow(QMainWindow):
@@ -188,8 +187,10 @@ class VideoWindow(QMainWindow):
         self.media_player.durationChanged.connect(lambda duration: duration_changed(self, duration))
         
         # Create playlist widget
-        self.playlist = QListWidget()
+        self.playlist = MyListWidget(self)
         self.playlist.setSizePolicy(QSizePolicy.Minimum,QSizePolicy.Minimum)
+        self.playlist.setSelectionMode(QAbstractItemView.ExtendedSelection) # allow multiple item selection
+
 
         ### Window Layout ###
 
@@ -485,7 +486,7 @@ class VideoWindow(QMainWindow):
         self.playlist.itemActivated.connect(lambda item: change_video(self, item)) #activating the file with 'enter'
         # load the tagging data from the comments of the video file activated. set the tagging interface
         self.playlist.itemActivated.connect(lambda: set_from_comments(self, load_tags_from_video(self.file_path_label.text())))
-        # self.playlist.itemActivated.connect(print("playlist item ACTIVATED"))
+        self.playlist.itemActivated.connect(lambda: set_from_comments(self, load_tags_from_video(self.file_path_label.text())) if load_tags_from_video(self.file_path_label.text()) is not None else set_default_tagging_data(self))
 
 
         ### Menu ###
@@ -511,14 +512,14 @@ class VideoWindow(QMainWindow):
         file_menu.addAction(select_auto_next_video)
 
         # #TODO: save video tags
-        save_tags_action = QAction('&Save Tagging Data',self)
+        save_tags_action = QAction("Save Tagging Data",self)
         save_tags_action.setShortcut("Ctrl+S") #add ctrl+s shortcut to save the video tags
         save_tags_action.triggered.connect(lambda: save_tagging_data(self,self.file_path_label.text())) #connect the triggered action with the function to save the tagging 
         file_menu.addAction(save_tags_action)
 
         # Add keyboard shortcuts for play, pause, stop, speed, position, next, previous, auto-play next, full-screen
         QShortcut(QKeySequence(Qt.Key_Space), self, lambda: toggle_play_pause(self)) #play-pause spacebar toggle
-        QShortcut(QKeySequence(Qt.CTRL + Qt.Key_S), self, self.media_player.stop) #stop video with 'S'
+        QShortcut(QKeySequence(Qt.Key_Shift + Qt.Key_S), self, self.media_player.stop) #stop video with 'S'
         QShortcut(QKeySequence(Qt.Key_BracketLeft), self, lambda: decrease_speed(self)) #decrease speed with 'down'
         QShortcut(QKeySequence(Qt.Key_BracketRight), self, lambda: increase_speed(self)) #increase speed with 'up'
         QShortcut(QKeySequence(Qt.Key_Right), self, lambda: fast_forward(self)) #fast forward video with 'right'
@@ -545,6 +546,5 @@ if __name__ == "__main__":
     window.show()
 
     # # Enter the Python terminal
-    # code.interact(local=locals())
-    breakpoint()
+    # breakpoint()
     app.exec_()
