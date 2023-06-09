@@ -23,21 +23,21 @@ import os, json
 
 from videoFunctions import *
 from taggingFunctions import *
-from custom_widgets import ClickableVideoWidget, MyListWidget
+from customWidgets import ClickableVideoWidget, MyListWidget
 
 # Create a main window class
 class VideoWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("PySide2 Video Player") #title the media palyer
+        self.setWindowTitle("Bennett Hockey Video") #title the media palyer
 
         # Store the current directory
         self.current_dir = None
 
-        # Add a list of directories for playlists
-        self.dirs_list = []
-        self.file_paths = {}  # List to store absolute paths
+        # Store the file paths and the tagging data of files in the playlist in the video window instance
+        self.file_paths = {}  # dictionary to store absolute paths ot video items in the playlist. by file name key
+        self.file_data = {}  # dictionary to store the tagging data json of the items in the playlist
 
         # Set initial size of the window to 60% of the screen size
         screen_geometry = QApplication.primaryScreen().geometry()
@@ -496,7 +496,7 @@ class VideoWindow(QMainWindow):
         file_menu = menu_bar.addMenu("&File")
 
         # Add actions to the file menu
-        open_action = QAction("Open", self)
+        open_action = QAction("Open Directory", self)
         open_action.setShortcut("Ctrl+O") #add ctrl+o shortcut to open file 
         open_action.triggered.connect(lambda: open_directory(self))
         file_menu.addAction(open_action)
