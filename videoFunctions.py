@@ -124,26 +124,30 @@ def undo(list_widget, file_paths, file_data, undo_stack):
 
     action, items = undo_stack.pop()
     if action == 'open_dir':
-        for row, item_text, file_path, file_tag_data in items:
-            list_widget.takeItem(row)
-            file_paths.pop(item_text, None)
-            file_data.pop(item_text, None)
-            
-
+        for _, item_text, _, _ in items:   # Only item_text is needed
+            item_list = list_widget.findItems(item_text, Qt.MatchExactly)
+            if item_list:
+                row = list_widget.row(item_list[0])
+                list_widget.takeItem(row)
+                file_paths.pop(item_text, None)
+                file_data.pop(item_text, None)
     elif action == 'remove':
-        for row, item_text, file_path, file_tag_data in reversed(items):
+        for _, item_text, file_path, file_tag_data in reversed(items):  # Only item_text, file_path, and file_tag_data are needed
             # Only add item back if it doesn't already exist in the list
             if item_text not in file_paths:
+                row = list_widget.count()  # Add the item to the end of the list
                 list_widget.insertItem(row, item_text)
                 file_paths[item_text] = file_path
                 file_data[item_text] = file_tag_data
     elif action == 'add':
-        for row, item_text, file_path, file_tag_data in reversed(items):
-            # Only remove item if it exists in the list
-            if item_text in file_paths:
+        for _, item_text, _, _ in reversed(items):  # Only item_text is needed
+            item_list = list_widget.findItems(item_text, Qt.MatchExactly)
+            if item_list:
+                row = list_widget.row(item_list[0])
                 list_widget.takeItem(row)
                 file_paths.pop(item_text, None)
                 file_data.pop(item_text, None)
+
 
 
 # Function to toggle full screen
