@@ -3,6 +3,7 @@ from PySide2.QtMultimedia import QMediaContent, QMediaPlayer
 from PySide2.QtCore import QUrl, Qt
 from datetime import timedelta
 import os
+import taggingFunctions
 
 ##FUNCTIONS BELOW
 
@@ -22,48 +23,44 @@ def open_directory(self):
     file_dialog.move(qr.topLeft())
 
 
+    
     if file_dialog.exec_() == QFileDialog.Accepted:
         dir_name = file_dialog.selectedFiles()[0]
 
         if dir_name:
+            self.playlist.undo_stack.clear()  # Clear the undo stack
+
+            added_items = []  # Move added_items list here, outside the file loop
+
             # Find all video files in the directory and its subdirectories
             for root, dirs, files in os.walk(dir_name):
                 for file_name in files:
+                    
                     if file_name.endswith((".mp4", ".mov", ".mkv", ".avi", ".ts")):  # Add other video formats as needed
                         absolute_path = os.path.join(root, file_name)
 
                         # Create a playlist item with up to two directories and the file name
                         playlist_item = "/".join(absolute_path.split("/")[-3:])
-
+                        
                         # Only add new item if it's not already in the playlist
                         if playlist_item not in self.file_paths:
-                            self.file_paths[playlist_item] = absolute_path  # Add the absolute path to the dictionary
-                            self.playlist.addItem(playlist_item)
+                            self.file_paths[playlist_item] = absolute_path  # Add the absolute path to the playlist dictionary in the VideoWindow class
+                            tags = taggingFunctions.load_tags_from_video(absolute_path) # Load the tagging Json from the file at the absolute path and add to the dictionary in the VideoWindow class
+                            self.file_data[playlist_item] = tags # Load the tagging Json from the file at the absolute path and add to the dictionary in the VideoWindow class
+                            added_items.append((self.playlist.count()-1,playlist_item,absolute_path, tags))
+                        
+            playlist_items = [item[1] for item in added_items]
+            self.playlist.addItems(playlist_items)          
+        
+            # Add 'open_dir' action to the undo stack only once after all files have been processed
+            self.playlist.undo_stack.append(('open_dir', added_items) if added_items else None)
+            self.playlist.setFocus()
+
 
 
 # Function to change the video file to play
 def change_video(self, item):
     relative_path = item.text()
-
-    # # prompt with a message box if there are unsaved changes on change video
-    # if self.unsaved_changes:
-    #     msg = QMessageBox()
-    #     msg.setIcon(QMessageBox.Warning)
-    #     msg.setText("There are unsaved changes.")
-    #     msg.setInformativeText("Do you want to save your changes?")
-    #     msg.setStandardButtons(QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
-    #     msg.setDefaultButton(QMessageBox.Save)
-    #     retval = msg.exec_()
-
-    #     if retval == QMessageBox.Save:
-    #         # Save changes function here
-    #         pass
-    #     elif retval == QMessageBox.Discard:
-    #         # Continue without saving changes
-    #         pass
-    #     elif retval == QMessageBox.Cancel:
-    #         # Do not proceed with the video change
-    #         return
 
     if relative_path != '':
         # Look up the absolute path in the dictionary
@@ -74,8 +71,26 @@ def change_video(self, item):
             # Set the label's text to the absolute path
             self.file_path_label.setText(absolute_path)
 
+# Function to filter the files
+def filter_playlist(file_paths, file_data, filter_criteria): # takes in the playlist dictionaries for path and tagging data of each playlist item and the filter criteria dictionary
+    pass
+
+# Function to remove all items in playlist upon a filter activation, and palces them in the undo stack.
+def remove_playlist_items(list_wiget, file_paths, file_data):
+    playlist_items = [list_wiget.item(x) for x in range(list_wiget.count())]
+
+    #remove items from playlist
+    removed_items =[]
+    for item in playlist_items:
+        item_text = list_wiget.takeItem(item).text()
+        file_path = file_paths.pop(item_text, None)
+        file_tag_data = file_data.pop(item_text, None)
+        removed_items.append((item, item_text, file_path, file_tag_data))
+    
+    return ('remove', removed_items) if removed_items else None
+
 # Function to remove the currently selected items from the playlist
-def remove_current_item(list_widget, file_paths):
+def remove_current_item(list_widget, file_paths, file_data):
     selected_items = list_widget.selectedItems()
 
     # Create a list of rows from the selected items
@@ -89,51 +104,46 @@ def remove_current_item(list_widget, file_paths):
     for row in rows:
         item_text = list_widget.takeItem(row).text()
         file_path = file_paths.pop(item_text, None)
-        removed_items.append((row, item_text, file_path))
+        file_tag_data = file_data.pop(item_text, None)
+        removed_items.append((row, item_text, file_path, file_tag_data))
 
     return ('remove', removed_items) if removed_items else None
 
-# Function to add items to the undo stack of actions
-def add_item(list_widget, file_paths, item_text, file_path):
-    # Add the item to the list widget and the file paths dictionary
-    list_widget.addItem(item_text)
-    file_paths[item_text] = file_path
+# # Function to add items 
+# def add_item(list_widget, file_paths, item_text, file_path):
+#     # Add the item to the list widget and the file paths dictionary
+#     list_widget.addItem(item_text)
+#     file_paths[item_text] = file_path
 
-    return ('add', [(list_widget.count()-1, item_text, file_path)])
-
-# # Function to trigger the undo action from the action stack
-# def undo(list_widget, file_paths, undo_stack):
-#     if not undo_stack:
-#         return
-
-#     action, items = undo_stack.pop()
-#     if action == 'remove':
-#         for row, item_text, file_path in reversed(items):
-#             list_widget.insertItem(row, item_text)
-#             file_paths[item_text] = file_path
-#     elif action == 'add':
-#         for row, item_text, file_path in reversed(items):
-#             list_widget.takeItem(row)
-#             file_paths.pop(item_text, None)
+#     return ('add', [(list_widget.count()-1, item_text, file_path)])
 
 # Function to trigger the undo action from the action stack
-def undo(list_widget, file_paths, undo_stack):
+def undo(list_widget, file_paths, file_data, undo_stack):
     if not undo_stack:
         return
 
     action, items = undo_stack.pop()
-    if action == 'remove':
-        for row, item_text, file_path in reversed(items):
+    if action == 'open_dir':
+        for row, item_text, file_path, file_tag_data in items:
+            list_widget.takeItem(row)
+            file_paths.pop(item_text, None)
+            file_data.pop(item_text, None)
+            
+
+    elif action == 'remove':
+        for row, item_text, file_path, file_tag_data in reversed(items):
             # Only add item back if it doesn't already exist in the list
             if item_text not in file_paths:
                 list_widget.insertItem(row, item_text)
                 file_paths[item_text] = file_path
+                file_data[item_text] = file_tag_data
     elif action == 'add':
-        for row, item_text, file_path in reversed(items):
+        for row, item_text, file_path, file_tag_data in reversed(items):
             # Only remove item if it exists in the list
             if item_text in file_paths:
                 list_widget.takeItem(row)
                 file_paths.pop(item_text, None)
+                file_data.pop(item_text, None)
 
 
 # Function to toggle full screen
@@ -240,11 +250,6 @@ def format_time(millis):
     if seconds_index != -1:  # If there are decimal places
         formatted_time = formatted_time[:seconds_index+2]  # Only keep one decimal place
     return formatted_time
-
-def activate_button(button_group):
-    buttons = [button for button in button_group.buttons() if button.isChecked()]
-    for button in buttons:
-        button.toggle()
 
 # function to change widget visibility
 def toggle_widget_visibility(widget):
