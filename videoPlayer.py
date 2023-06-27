@@ -23,7 +23,7 @@ import os, json
 
 from videoFunctions import *
 from taggingFunctions import *
-from customWidgets import ClickableVideoWidget, MyListWidget
+from customWidgets import ClickableVideoWidget, MyListWidget, FilterDialog
 
 # Create a main window class
 class VideoWindow(QMainWindow):
@@ -307,6 +307,7 @@ class VideoWindow(QMainWindow):
             combo = QComboBox()
             combo.setMinimumWidth(75)
             combo.setMaximumWidth(100)
+            combo.addItem('N/A')
             combo.addItem('0')
             combo.addItems([str(n) for n in range(1, 6)])
             if 'rush_for' not in self.line_rush_selectors: #create the sub-dictionary if it doesn't exist
@@ -336,6 +337,7 @@ class VideoWindow(QMainWindow):
             combo = QComboBox()
             combo.setMinimumWidth(75)
             combo.setMaximumWidth(100)
+            combo.addItem('N/A')
             combo.addItem('0')
             combo.addItems([str(n) for n in range(1, 6)])
             if 'rush_opp' not in self.line_rush_selectors: # create the sub-dictionary if doesn't exist
@@ -384,8 +386,8 @@ class VideoWindow(QMainWindow):
             combo = QComboBox()
             combo.setMinimumWidth(100)
             combo.setMaximumWidth(100)
-            combo.addItem('5')
-            combo.addItems(['4', '3'])
+            combo.addItem('N/A')
+            combo.addItems(['5', '4', '3'])
             checkbox = QCheckBox('NE')
             self.strength_selectors[label] = [combo,checkbox] # TODO: this needs to record the proper/oppone, the combobox value and the state of the NE checkbox
             # label_widget = QLabel(label)
@@ -488,6 +490,7 @@ class VideoWindow(QMainWindow):
         # self.playlist.itemActivated.connect(lambda: set_from_comments(self, load_tags_from_video(self.file_path_label.text())))
         self.playlist.itemActivated.connect(lambda: set_from_comments(self, load_tags_from_video(self.file_path_label.text())) if load_tags_from_video(self.file_path_label.text()) is not None else set_default_tagging_data(self))
 
+        self.dialog = FilterDialog(self)
 
         ### Menu ###
 
@@ -511,11 +514,16 @@ class VideoWindow(QMainWindow):
         select_auto_next_video.triggered.connect(lambda: toggle_auto_play_next(self))
         file_menu.addAction(select_auto_next_video)
 
-        # #TODO: save video tags
-        save_tags_action = QAction("Save Tagging Data",self)
+        save_tags_action = QAction("Save Tagging Data",self) #save video tags
         save_tags_action.setShortcut("Ctrl+S") #add ctrl+s shortcut to save the video tags
         save_tags_action.triggered.connect(lambda: save_tagging_data(self,self.file_path_label.text())) #connect the triggered action with the function to save the tagging 
         file_menu.addAction(save_tags_action)
+
+        filter_action = QAction("Filter Playlist", self)
+        filter_action.setShortcut("Ctrl+F")
+        filter_action.triggered.connect(self.dialog.show)
+        file_menu.addAction(filter_action)
+        
 
         # Add keyboard shortcuts for play, pause, stop, speed, position, next, previous, auto-play next, full-screen
         QShortcut(QKeySequence(Qt.Key_Space), self, lambda: toggle_play_pause(self)) #play-pause spacebar toggle
