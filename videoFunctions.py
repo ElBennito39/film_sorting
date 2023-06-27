@@ -72,11 +72,71 @@ def change_video(self, item):
             self.file_path_label.setText(absolute_path)
 
 # Function to filter the files
-def filter_playlist(file_paths, file_data, filter_criteria): # takes in the playlist dictionaries for path and tagging data of each playlist item and the filter criteria dictionary
-    pass
+def filter_playlist_dict(file_data_dict,filter_criteria):
+    filtered_playlist = []
 
-# Function to remove all items in playlist upon a filter activation, and palces them in the undo stack.
-def remove_playlist_items(list_wiget, file_paths, file_data):
+    for video in file_data_dict.Keys():
+        matches = True
+
+        # Check play types
+        if filter_criteria['play_type']:
+            video_play_types = [play_type for play_type, value in file_data_dict[video]['play_type'].items() if value]
+            if not all(play_type in video_play_types for play_type in filter_criteria['play_type']):
+                matches = False
+
+        # Check line rushes if criteria are not default
+        if matches and filter_criteria['line_rushes']:
+            for rush_type, rush_values in filter_criteria['line_rushes'].items():
+                if any(file_data_dict[video]['line_rushes'][rush_type][rush] != rush_value for rush, rush_value in rush_values.items() if rush_value != 'N/A'):
+                    matches = False
+
+        # Check strength if criteria are not 'N/A'
+        if matches and filter_criteria['strength']:
+            if any(file_data_dict[video]['strength'][strength_type][0] != strength_value[0] for strength_type, strength_value in filter_criteria['strength'].items() if strength_value[0] != 'N/A'):
+                matches = False
+
+        # Check Empty Net if criteria are not 'N/A'
+        if matches and filter_criteria['strength']:
+            if any(file_data_dict[video]['strength'][strength_type][1] != strength_value[1] for strength_type, strength_value in filter_criteria['strength'].items() if strength_value[1] != 'N/A'):
+                matches = False
+
+        # Check scoring chances if criteria are not 'N/A'
+        if matches and filter_criteria['scoring_chances']:
+            if any(file_data_dict[video]['scoring_chances'][chance] != chance_value for chance, chance_value in filter_criteria['scoring_chances'].items() if chance_value != 'N/A'):
+                matches = False
+
+        # Check play attributes
+        if matches and filter_criteria['attributes']:
+            video_attributes = [attr for attr, value in file_data_dict[video]['attributes'].items() if value]
+            if not all(attr in video_attributes for attr in filter_criteria['attributes']):
+                matches = False
+
+        if matches: # If all tags matched, add this video to the filtered playlist.
+            filtered_playlist.append(video)
+
+    return filtered_playlist
+
+# Function to edit the playlist contents. Uses a list of dict keys and a list widget to adjust the list.
+
+def filter_playlist_items(list_widget, file_paths, file_data, filtered_list):
+    #use the filtered_list, which are keys, to access the file_paths
+    #remove the file_data that doesn't have a key in our filtered_list
+    #remove the items from the playlist widget that aren't in the file_data dictionary
+
+    removed_items = []
+    #store the items we want to delete
+    for item in file_paths.keys(): #for every file that is in the file path dictionary (represents the videos in the playlist)
+        if item not in filtered_list: #if it was filtered out of the playlist for not matching the filter gui tags, collect its attributes, store them in the removed items list.
+            item_text = list_widget.takeItem(item).text()
+            file_path = file_paths.pop(item_text)
+            file_tag_data = file_data.pop(item_text)
+            removed_items.append((item, item_text, file_path, file_tag_data))  
+
+    return ('remove', removed_items) if removed_items else None
+
+
+# Function to remove all items in playlist, and palces them in the undo stack.
+def remove_all_playlist_items(list_wiget, file_paths, file_data):
     playlist_items = [list_wiget.item(x) for x in range(list_wiget.count())]
 
     #remove items from playlist
