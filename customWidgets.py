@@ -1,5 +1,5 @@
 from PySide2.QtMultimediaWidgets import QVideoWidget
-from PySide2.QtWidgets import QApplication, QWidget, QListWidget, QComboBox, QDialog, QLayout, QHBoxLayout, QVBoxLayout, QGridLayout, QLabel, QSizePolicy, QCheckBox, QSpacerItem
+from PySide2.QtWidgets import QApplication, QWidget, QListWidget, QComboBox, QDialog, QLayout, QHBoxLayout, QVBoxLayout, QGridLayout, QLabel, QSizePolicy, QCheckBox, QSpacerItem, QPushButton
 from PySide2.QtCore import Qt
 import videoFunctions
 
@@ -263,6 +263,25 @@ class FilterDialog(QDialog):
 
         filter_selection_layout.addLayout(play_attributes_layout, 0, 3)
     
+        # Create 'Apply Filters' and 'Cancel' buttons
+        buttons_layout = QHBoxLayout()
+        buttons_layout.setSpacing(10)  # Space between the buttons
+        buttons_layout.setContentsMargins(20, 20, 20, 20)  # Space around the layout (left, top, right, bottom)
+
+        apply_filters_button = QPushButton("Apply Filters")
+        self.apply_filters_button = apply_filters_button
+        cancel_button = QPushButton("Cancel")
+        self.cancel_button = cancel_button
+
+        buttons_layout.addWidget(apply_filters_button)
+        # buttons_layout.addStretch()  # This adds a stretchable space between the buttons
+        buttons_layout.addSpacerItem(QSpacerItem(50, 20))  # Add a spacer with a fixed width of 50 and height of 20
+        buttons_layout.addWidget(cancel_button)
+
+        # Add buttons to the filter_selection_layout
+        filter_selection_layout.addLayout(buttons_layout, 2, 0, 1, 4)  # Span it across all 4 columns
+
+
         # # Create Widget to add the filter selection layout 
         # filter_selection_widget = QWidget()
         # filter_selection_widget.setLayout(filter_selection_layout)
@@ -270,47 +289,11 @@ class FilterDialog(QDialog):
         # Set filter_selection_layout as the layout for FilterDialog
         self.setLayout(filter_selection_layout)
 
+        # Connect the apply and cancel buttons to their functions
+        # self.filter_selection = videoFunctions.filter_playlist_dict(#parent file data dictionary)
+        # self.apply_filters_button.click.connect(videoFunctions.filter_playlist_items(#parents list widget, #parents file paths dictionary, #parents file data dictionary, self.filter_selection))
 
-        # Reuse your interface for tagging the videos here.
-        # You'll have to make some modifications to ensure it works for filter selection instead of video tagging.
-
-    # # You will need to add some method here to collect the filter criteria from the user interface.
-    # def get_filter_criteria(self):
-    #     # For play_type, we're checking which checkboxes are checked.
-    #     play_type = {}
-    #     for play in self.play_type_selectors:
-    #         play_type[play] = self.play_type_selectors[play].isChecked()
-        
-    #     # For line_rushes, we're getting the current text in each combo box.
-    #     line_rushes = {}
-    #     for rush_type in self.line_rush_selectors:
-    #         line_rushes[rush_type] = {rush: self.line_rush_selectors[rush_type][rush].currentText() for rush in self.line_rush_selectors[rush_type]}
-            
-    #     # For strength, we're getting the current text in each combo box and the checked status of each checkbox.
-    #     strength = {}
-    #     for strength_type in self.strength_selectors:
-    #         strength[strength_type] = [self.strength_selectors[strength_type][0].currentText(), self.strength_selectors[strength_type][1].isChecked()]
-            
-    #     # For scoring chances, we're getting the current text in each combo box.
-    #     scoring_chances = {}
-    #     for chance in self.scoring_chance_selectors:
-    #         scoring_chances[chance] = self.scoring_chance_selectors[chance].currentText()
-            
-    #     # For play_attributes, we're checking which checkboxes are checked.
-    #     attributes = {}
-    #     for attr in self.play_attribute_selectors:
-    #         attributes[attr] = self.play_attribute_selectors[attr].isChecked()
-
-    #     # Combining all data in a single dictionary
-    #     filter_criteria = {
-    #         'play_type': play_type,
-    #         'line_rushes': line_rushes,
-    #         'strength': strength,
-    #         'scoring_chances': scoring_chances,
-    #         'attributes': attributes
-    #     }
-    #     return filter_criteria
-
+        ### ^^ how to get the parent window's information?
 
 if __name__ == "__main__":
     app = QApplication([])
