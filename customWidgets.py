@@ -1,7 +1,9 @@
 from PySide2.QtMultimediaWidgets import QVideoWidget
+from PySide2.QtMultimedia import QMediaContent
 from PySide2.QtWidgets import QApplication, QWidget, QListWidget, QComboBox, QDialog, QLayout, QHBoxLayout, QVBoxLayout, QGridLayout, QLabel, QSizePolicy, QCheckBox, QSpacerItem, QPushButton
 from PySide2.QtCore import Qt
 import videoFunctions
+import taggingFunctions
 
 
 #subclassing QVideoWidget for click play-pause
@@ -294,6 +296,92 @@ class FilterDialog(QDialog):
         # self.apply_filters_button.click.connect(videoFunctions.filter_playlist_items(#parents list widget, #parents file paths dictionary, #parents file data dictionary, self.filter_selection))
 
         ### ^^ how to get the parent window's information?
+
+        #connect the button clicks
+        self.apply_filters_button.clicked.connect(self.on_apply_button_clicked)
+        self.cancel_button.clicked.connect(self.close)
+
+    def reset_ui(self):
+        # Reset all GUI elements to their default values
+
+        # Reset play_type selectors
+        for btn in self.play_type_selectors.values():
+            btn.setChecked(False)
+
+        # Reset line_rush selectors
+        for combo_dict in self.line_rush_selectors.values():
+            for combo in combo_dict.values():
+                combo.setCurrentIndex(0)
+
+        # Reset strength selectors
+        for combo_checkbox in self.strength_selectors.values():
+            combo_checkbox[0].setCurrentIndex(0)
+            combo_checkbox[1].setChecked(False)
+
+        # Reset scoring_chance selectors
+        for combo in self.scoring_chance_selectors.values():
+            combo.setCurrentIndex(0)
+
+        # Reset play_attribute selectors
+        for checkbox in self.play_attribute_selectors.values():
+            checkbox.setChecked(False)
+
+    def showEvent(self, event):
+        self.reset_ui()
+        super(FilterDialog, self).showEvent(event)
+
+    
+    def updateFilterStatus(self, filter_criteria):
+        default_criteria = {
+            'play_type': {'BO': False, 'NZR': False, 'NZA': False, 'OZA': False, 'DZC': False, 'NZB': False, 'NZF': False, 'OZF': False},
+            'line_rushes': {'rush_for': {'us': 'N/A', 'them': 'N/A'}, 'rush_opp': {'us': 'N/A', 'them': 'N/A'}},
+            'strength': {'for': ['N/A', False], 'opp': ['N/A', False]},
+            'scoring_chances': {'for_chance': 'N/A', 'opp_chance': 'N/A'},
+            'attributes': {'GF': False, 'Shots For': False, 'takeaway': False, 'drew_penalty': False, 'GA': False, 'Shots Against': False, 'giveaway': False, 'took_penalty': False}
+        }
+        
+        non_default_filters = []
+        
+        for key, value in filter_criteria.items():
+            if isinstance(value, dict):
+                for sub_key, sub_value in value.items():
+                    if sub_value != default_criteria.get(key, {}).get(sub_key):
+                        non_default_filters.append(f"{key}.{sub_key}: {sub_value}")
+            elif value != default_criteria.get(key):
+                non_default_filters.append(f"{key}: {value}")
+
+        filter_string = ', '.join(non_default_filters)
+        current_text = self.parent().statusBar().currentMessage()
+        if current_text:
+            filter_string = current_text + ', ' + filter_string
+            
+        self.parent().statusBar().showMessage(f"Active filters: {filter_string}")
+
+
+    def on_apply_button_clicked(self):
+        #get some data from the parent and print it
+        # print(self.parent().file_data)
+        # print(self.parent().file_paths.items())
+
+        # Call the function to collect the tagging data
+        filter_criteria = taggingFunctions.collect_tagging_data(self)
+        print(f'the filter_criteria: {filter_criteria}')
+
+        # Call the function to filter the playlist based on the collected tagging data
+        filtered_playlist = videoFunctions.filter_playlist_dict(self.parent().file_data, filter_criteria)
+        print(f'the filtered_playlist is: {filtered_playlist}')
+
+        # Call the function to adjust the playlist items in the list_widget
+        videoFunctions.filter_playlist_items(self.parent().playlist, self.parent().file_paths, self.parent().file_data, filtered_playlist)
+
+        self.parent().playlist.setCurrentItem(None)
+        self.parent().media_player.setMedia(QMediaContent())
+        
+        self.updateFilterStatus(filter_criteria)
+        
+        self.close()
+
+
 
 if __name__ == "__main__":
     app = QApplication([])
