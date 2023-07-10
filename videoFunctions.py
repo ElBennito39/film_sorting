@@ -1,4 +1,4 @@
-from PySide2.QtWidgets import QFileDialog, QDesktopWidget, QDialog
+from PySide2.QtWidgets import QFileDialog, QDesktopWidget
 from PySide2.QtMultimedia import QMediaContent, QMediaPlayer
 from PySide2.QtCore import QUrl, Qt
 from datetime import timedelta
@@ -54,6 +54,9 @@ def open_directory(self):
         
             # Add 'open_dir' action to the undo stack only once after all files have been processed
             self.playlist.undo_stack.append(('open_dir', added_items) if added_items else None)
+
+            print(f'The added items tuple:  {added_items}')
+
             self.playlist.setFocus()
 
 
@@ -71,71 +74,73 @@ def change_video(self, item):
             # Set the label's text to the absolute path
             self.file_path_label.setText(absolute_path)
 
-# Function to filter the files
-def filter_playlist_dict(file_data_dict,filter_criteria):
-    filtered_playlist = []
+#Function to find file_data item vs criteria filter matches
+def match_criteria(data_value, criteria_value):
+    if isinstance(criteria_value, dict):
+        for key, value in criteria_value.items():
+            if not match_criteria(data_value.get(key, 'N/A'), value):
+                return False
+    elif isinstance(criteria_value, list):
+        if criteria_value[0] not in ('N/A', False):
+            if data_value not in criteria_value:
+                return False
+    else:
+        if criteria_value not in ('N/A', False):
+            if data_value != criteria_value:
+                return False
+    return True
 
-    for video in file_data_dict.Keys():
-        matches = True
+# Function to filter the file_data dictionary of the main window's playlist 
+def filter_playlist_dict(file_data, filter_criteria):
+    filtered_data = {}
 
-        # Check play types
-        if filter_criteria['play_type']:
-            video_play_types = [play_type for play_type, value in file_data_dict[video]['play_type'].items() if value]
-            if not all(play_type in video_play_types for play_type in filter_criteria['play_type']):
-                matches = False
+    for key, data in file_data.items():
+        if data is None:
+            continue
 
-        # Check line rushes if criteria are not default
-        if matches and filter_criteria['line_rushes']:
-            for rush_type, rush_values in filter_criteria['line_rushes'].items():
-                if any(file_data_dict[video]['line_rushes'][rush_type][rush] != rush_value for rush, rush_value in rush_values.items() if rush_value != 'N/A'):
-                    matches = False
+        match = True
+        for criteria_key, criteria_value in filter_criteria.items():
+            if not match_criteria(data.get(criteria_key, 'N/A'), criteria_value):
+                match = False
+                break
 
-        # Check strength if criteria are not 'N/A'
-        if matches and filter_criteria['strength']:
-            if any(file_data_dict[video]['strength'][strength_type][0] != strength_value[0] for strength_type, strength_value in filter_criteria['strength'].items() if strength_value[0] != 'N/A'):
-                matches = False
+        if match:
+            filtered_data[key] = data
 
-        # Check Empty Net if criteria are not 'N/A'
-        if matches and filter_criteria['strength']:
-            if any(file_data_dict[video]['strength'][strength_type][1] != strength_value[1] for strength_type, strength_value in filter_criteria['strength'].items() if strength_value[1] != 'N/A'):
-                matches = False
+    return filtered_data
 
-        # Check scoring chances if criteria are not 'N/A'
-        if matches and filter_criteria['scoring_chances']:
-            if any(file_data_dict[video]['scoring_chances'][chance] != chance_value for chance, chance_value in filter_criteria['scoring_chances'].items() if chance_value != 'N/A'):
-                matches = False
 
-        # Check play attributes
-        if matches and filter_criteria['attributes']:
-            video_attributes = [attr for attr, value in file_data_dict[video]['attributes'].items() if value]
-            if not all(attr in video_attributes for attr in filter_criteria['attributes']):
-                matches = False
-
-        if matches: # If all tags matched, add this video to the filtered playlist.
-            filtered_playlist.append(video)
-
-    return filtered_playlist
 
 # Function to edit the playlist contents. Uses a list of dict keys and a list widget to adjust the list.
-
-def filter_playlist_items(list_widget, file_paths, file_data, filtered_list):
-    #use the filtered_list, which are keys, to access the file_paths
-    #remove the file_data that doesn't have a key in our filtered_list
+def filter_playlist_items(list_widget, file_paths, file_data, filtered_data):
+    #remove the file_data that doesn't have a key in our filtered_data
     #remove the items from the playlist widget that aren't in the file_data dictionary
-
+    print(f'the file_data passed in: {file_data}')
     removed_items = []
     #store the items we want to delete
-    for item in file_paths.keys(): #for every file that is in the file path dictionary (represents the videos in the playlist)
-        if item not in filtered_list: #if it was filtered out of the playlist for not matching the filter gui tags, collect its attributes, store them in the removed items list.
-            item_text = list_widget.takeItem(item).text()
-            file_path = file_paths.pop(item_text)
-            file_tag_data = file_data.pop(item_text)
-            removed_items.append((item, item_text, file_path, file_tag_data))  
+    for item in list(file_paths.keys()): # Convert the keys to a list to avoid modifying the dict during iteration
+        print(f'the file_path keys are: {file_paths.keys()} \nthe item is: {item}')
+        print(f'the file_paths are: {file_paths}') 
+        print(f'the filtered_data is: {filtered_data}')
+        if item not in filtered_data: #if it was filtered out of the playlist for not matching the filter gui tags, collect its attributes, store them in the removed items list.
+            row = list_widget.row(list_widget.findItems(item, Qt.MatchExactly)[0])
+            print(f'the row is: {row}')
+            # item_text = list_widget.takeItem(row).text()
+            # print(f'the name of the file or item_text is: {item_text}')
+            file_path = file_paths.pop(item)
+            print(f'the file path is: {file_path}')
+            file_tag_data = file_data.pop(item)
+            print(f'the file tag data: {file_tag_data}')
+            removed_items.append((list_widget.count()-1, item, file_path, file_tag_data)) 
+            list_widget.takeItem(row) #take item from the playlist
+            print(f'The removed items tuple(s):   {removed_items}')
 
+    list_widget.undo_stack.append(('remove', removed_items) if removed_items else None)
+    # list_widget.file_path_label.setText('')
     return ('remove', removed_items) if removed_items else None
 
 
-# Function to remove all items in playlist, and palces them in the undo stack.
+# Function to remove all items in playlist, and places them in the undo stack.
 def remove_all_playlist_items(list_wiget, file_paths, file_data):
     playlist_items = [list_wiget.item(x) for x in range(list_wiget.count())]
 
