@@ -191,6 +191,9 @@ class VideoWindow(QMainWindow):
         self.playlist.setSizePolicy(QSizePolicy.Minimum,QSizePolicy.Minimum)
         self.playlist.setSelectionMode(QAbstractItemView.ExtendedSelection) # allow multiple item selection
 
+        # Set the context menu policy to enable the context menu
+        self.playlist.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.playlist.customContextMenuRequested.connect(self.showContextMenu)
 
         ### Window Layout ###
 
@@ -485,10 +488,9 @@ class VideoWindow(QMainWindow):
 
         # Connect the playlist's signal to change the video
         self.playlist.itemClicked.connect(lambda item: change_video(self, item)) #clicking the file
-        self.playlist.itemActivated.connect(lambda item: change_video(self, item)) #activating the file with 'enter'
+        self.playlist.itemClicked.connect(lambda item: change_video(self, item)) #activating the file with 'enter'
         # load the tagging data from the comments of the video file activated. set the tagging interface
-        # self.playlist.itemActivated.connect(lambda: set_from_comments(self, load_tags_from_video(self.file_path_label.text())))
-        self.playlist.itemActivated.connect(lambda: set_from_comments(self, load_tags_from_video(self.file_path_label.text())) if load_tags_from_video(self.file_path_label.text()) is not None else set_default_tagging_data(self))
+        self.playlist.itemClicked.connect(lambda: set_from_comments(self, load_tags_from_video(self.file_path_label.text())) if load_tags_from_video(self.file_path_label.text()) is not None else set_default_tagging_data(self))
 
         self.dialog = FilterDialog(self)
 
@@ -507,12 +509,12 @@ class VideoWindow(QMainWindow):
         hide_tag_tools = QAction("Hide Tagging Tools", self)
         hide_tag_tools.setShortcut("Ctrl+T") #add ctrl+t shortcut to toggle tag toolbar visibility via the tag_vis_checkbox
         hide_tag_tools.triggered.connect(lambda: toggle_checkbox(self.tag_vis_checkbox))
-        file_menu.addAction(hide_tag_tools)
+        # file_menu.addAction(hide_tag_tools)
 
         select_auto_next_video = QAction("Auto Play Next Video",self)
         select_auto_next_video.setShortcut("Ctrl+A") #add ctrl+A shortcut to toggle tag toolbar visibility via the tag_vis_checkbox
         select_auto_next_video.triggered.connect(lambda: toggle_auto_play_next(self))
-        file_menu.addAction(select_auto_next_video)
+        # file_menu.addAction(select_auto_next_video)
 
         save_tags_action = QAction("Save Tagging Data",self) #save video tags
         save_tags_action.setShortcut("Ctrl+S") #add ctrl+s shortcut to save the video tags
@@ -523,6 +525,19 @@ class VideoWindow(QMainWindow):
         filter_action.setShortcut("Ctrl+F")
         filter_action.triggered.connect(self.dialog.show)
         file_menu.addAction(filter_action)
+
+         # Create the actions for sorting
+        sort_ascending_action = QAction("Sort Ascending", self)
+        sort_ascending_action.triggered.connect(lambda: self.sortPlaylist(Qt.AscendingOrder))
+
+        sort_descending_action = QAction("Sort Descending", self)
+        sort_descending_action.triggered.connect(lambda: self.sortPlaylist(Qt.DescendingOrder))
+
+        
+        # Create the context menu
+        self.context_menu = QMenu(self)
+        self.context_menu.addAction(sort_ascending_action)
+        self.context_menu.addAction(sort_descending_action)
         
 
         # Add keyboard shortcuts for play, pause, stop, speed, position, next, previous, auto-play next, full-screen
@@ -538,8 +553,10 @@ class VideoWindow(QMainWindow):
         QShortcut(QKeySequence(Qt.CTRL + Qt.Key_M), self, lambda: toggle_window_size(self))
         # QShortcut(QKeySequence(Qt.CTRL + Qt.Key_T), self, lambda: toggle_checkbox(self.tag_vis_checkbox))
 
-    def connect_signals(self):
-        pass
+    def showContextMenu(self, pos):
+        self.context_menu.exec_(self.playlist.mapToGlobal(pos))
+    def sortPlaylist(self, order):
+        self.playlist.sortItems(order)
 
 
 if __name__ == "__main__":
